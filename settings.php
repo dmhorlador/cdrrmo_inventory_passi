@@ -24,7 +24,7 @@ $db_size_query = $conn->query("
 ");
 $db_size = $db_size_query->fetch_assoc()['size_mb'];
 
-// Get low stock count
+// Get stock alert count
 $low_stock_count = $conn->query("
     SELECT COUNT(*) as count 
     FROM inventory_items 
@@ -42,49 +42,24 @@ $inventory_value = $conn->query("
 require_once 'includes/header.php';
 ?>
 
-<style>
-    /* Settings page - only unique overrides needed beyond global style.css */
-    .settings-card .stat-card {
-        background: linear-gradient(135deg, var(--primary-50) 0%, white 100%);
-        padding: 18px;
-        border-radius: 10px;
-        border-left: 4px solid var(--primary);
-        margin-bottom: 12px;
-        display: block;
-    }
-    .settings-card .stat-value {
-        font-size: 28px;
-        font-weight: 800;
-        color: var(--primary);
-        margin: 4px 0;
-    }
-    .settings-card .stat-label {
-        color: var(--gray-500);
-        font-size: 12px;
-        text-transform: uppercase;
-        letter-spacing: .5px;
-    }
-</style>
-
-<div class="alert-info">
+<!-- <div class="alert-info">
     <i class="fas fa-info-circle"></i>
     <strong>System Settings & Information</strong> - View system version, features, statistics, and technical details about the CDRRMO Inventory Management System.
-</div>
+</div> -->
 
 <!-- Version & Release Info -->
-<div class="settings-card" style="margin-bottom: 30px;">
+<div class="settings-card mb-30">
     <h3><i class="fas fa-code-branch"></i> Version Information</h3>
-    <div style="text-align: center; padding: 20px 0;">
-        <div style="margin-bottom: 15px;">
-            <span class="version-badge">v<?php echo $system_version; ?></span>
+    <div class="settings-version-center">
+        <div class="settings-version-badge-wrap"><span class="version-badge">v<?php echo $system_version; ?></span>
         </div>
-        <div style="color: var(--gray-600); margin-bottom: 10px;">
+        <div class="settings-version-name">
             <strong>CDRRMO Inventory Management System</strong>
         </div>
-        <div style="color: var(--gray-500); font-size: 13px;">
+        <div class="settings-version-meta">
             <i class="fas fa-calendar-alt"></i> Released: <?php echo $release_date; ?>
         </div>
-        <div style="color: var(--gray-500); font-size: 13px;">
+        <div class="settings-version-meta">
             <i class="fas fa-sync-alt"></i> Last Updated: <?php echo $last_updated; ?>
         </div>
     </div>
@@ -121,7 +96,7 @@ require_once 'includes/header.php';
         </div>
         
         <div class="info-row">
-            <span class="info-label">Low Stock Items</span>
+            <span class="info-label">Stock Alert Items</span>
             <span class="info-value" style="color: <?php echo $low_stock_count > 0 ? 'var(--danger)' : 'var(--success)'; ?>">
                 <?php echo number_format($low_stock_count); ?>
             </span>
@@ -129,7 +104,7 @@ require_once 'includes/header.php';
         
         <div class="info-row">
             <span class="info-label">Total Inventory Value</span>
-            <span class="info-value" style="color: var(--primary);">
+            <span class="info-value text-primary">
                 ₱<?php echo number_format($inventory_value, 2); ?>
             </span>
         </div>
@@ -175,7 +150,7 @@ require_once 'includes/header.php';
         
         <div class="info-row">
             <span class="info-label">User Role</span>
-            <span class="info-value" style="text-transform: capitalize;">
+            <span class="info-value text-capitalize">
                 <?php echo htmlspecialchars($_SESSION['user_role']); ?>
             </span>
         </div>
@@ -201,7 +176,7 @@ require_once 'includes/header.php';
             </li>
             <li>
                 <i class="fas fa-check-circle"></i>
-                <span>Low stock alerts and automated notifications</span>
+                <span>Stock alert alerts and automated notifications</span>
             </li>
             <li>
                 <i class="fas fa-check-circle"></i>
@@ -265,9 +240,9 @@ require_once 'includes/header.php';
             </div>
         </div>
         
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--gray-200);">
-            <div class="info-label" style="margin-bottom: 10px;">Additional Libraries:</div>
-            <div style="color: var(--gray-600); font-size: 13px; line-height: 1.8;">
+        <div class="settings-tech-libs">
+            <div class="info-label settings-tech-libs-label">Additional Libraries:</div>
+            <div class="settings-tech-libs-list">
                 • Font Awesome 6.4.0 (Icons)<br>
                 • Chart.js (Analytics)<br>
                 • Custom autocomplete search<br>
@@ -279,95 +254,95 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Module List -->
-<div class="settings-card" style="margin-top: 20px;">
+<div class="settings-card mt-20">
     <h3><i class="fas fa-layer-group"></i> System Modules</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+    <div class="settings-module-grid">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-boxes"></i> Inventory Management
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 View, add, edit items with detailed tracking
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-arrow-down"></i> Receive Items
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Record incoming inventory with RIS tracking
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-arrow-up"></i> Distribute Items
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Issue items to departments/individuals
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-undo"></i> Return Items
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Process borrowed item returns
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-exchange-alt"></i> Transactions
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Complete transaction history & tracking
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-tags"></i> Categories
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Organize items by category with colors
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-exclamation-triangle"></i> Stock Alert
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
-                Monitor low stock with filters
+            <div class="settings-module-desc">
+                Monitor stock alert with filters
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-file-alt"></i> Reports
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 8 comprehensive reports with exports
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-users"></i> User Management
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 Manage users & access permissions
             </div>
         </div>
         
-        <div style="padding: 15px; background: var(--gray-50); border-radius: 8px;">
-            <div style="font-weight: 600; color: var(--primary); margin-bottom: 5px;">
+        <div class="settings-module-item">
+            <div class="settings-module-title">
                 <i class="fas fa-comments"></i> Feedback System
             </div>
-            <div style="font-size: 12px; color: var(--gray-600);">
+            <div class="settings-module-desc">
                 User feedback & support tickets
             </div>
         </div>
@@ -375,61 +350,61 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Available Reports -->
-<div class="settings-card" style="margin-top: 20px;">
+<div class="settings-card mt-20">
     <h3><i class="fas fa-chart-bar"></i> Available Reports</h3>
-    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 15px;">
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+    <div class="settings-report-grid">
+        <div class="settings-report-item">
             <strong>1. Inventory Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Complete list of all items with stock levels and values
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>2. Transaction Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 All receive and distribute transactions with details
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>3. Category Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Inventory summary grouped by category
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>4. Valuation Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Item valuations with percentage breakdown
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>5. Supplier Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Supplier transactions and total values
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>6. Stock Alert Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
-                Low stock items with restock cost estimates
+            <div class="settings-report-desc">
+                Stock alert items with restock cost estimates
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>7. Supplies & Materials Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Government-format issued/received items report
             </div>
         </div>
         
-        <div style="padding: 12px; border-left: 3px solid var(--primary); background: var(--gray-50);">
+        <div class="settings-report-item">
             <strong>8. Custodian Slip Report</strong>
-            <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">
+            <div class="settings-report-desc">
                 Borrowed items with date issued and returned
             </div>
         </div>
@@ -437,7 +412,7 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Changelog -->
-<div class="settings-card" style="margin-top: 20px;">
+<!-- <div class="settings-card mt-20">
     <h3><i class="fas fa-history"></i> Recent Updates (Version 2.0.0)</h3>
     
     <div class="changelog">
@@ -456,7 +431,7 @@ require_once 'includes/header.php';
         <ul>
             <li>Fixed column alignment in all reports</li>
             <li>Added filter functionality to Stock Alert</li>
-            <li>Changed "Low Stock Alert" to "Stock Alert"</li>
+            <li>Changed "Stock Alert Alert" to "Stock Alert"</li>
             <li>Removed Total Cost column from Transactions</li>
             <li>Changed "Date Borrowed" to "Date Issued" in custodian slips</li>
         </ul>
@@ -483,16 +458,16 @@ require_once 'includes/header.php';
             <li>Custodian slip generation</li>
         </ul>
     </div>
-</div>
+</div> -->
 
 <!-- Support Information -->
-<div class="settings-card" style="margin-top: 20px;">
+<!-- <div class="settings-card mt-20">
     <h3><i class="fas fa-question-circle"></i> Support & Documentation</h3>
-    <div style="padding: 15px; background: var(--primary-50); border-radius: 8px; margin-bottom: 15px;">
-        <div style="font-weight: 600; color: var(--primary); margin-bottom: 10px;">
+    <div class="settings-support-box">
+        <div class="settings-support-title">
             <i class="fas fa-book"></i> Need Help?
         </div>
-        <div style="font-size: 14px; color: var(--gray-700); line-height: 1.8;">
+        <div class="settings-support-text">
             • Use the <strong>Feedback</strong> page to submit questions or issues<br>
             • Check the user manual for detailed instructions<br>
             • Contact your system administrator for technical support<br>
@@ -514,25 +489,25 @@ require_once 'includes/header.php';
         <span class="info-label">System Purpose</span>
         <span class="info-value">Disaster Risk Reduction Management</span>
     </div>
-</div>
+</div> -->
 
 <!-- Developer Info -->
-<div class="settings-card" style="margin-top: 20px; background: var(--gray-50);">
+<!-- <div class="settings-card mt-20 bg-gray-50">
     <h3><i class="fas fa-code"></i> Development Information</h3>
-    <div style="text-align: center; padding: 20px;">
-        <div style="font-size: 14px; color: var(--gray-600); margin-bottom: 10px;">
+    <div class="settings-dev-center">
+        <div class="settings-dev-name">
             <strong>CDRRMO Inventory Management System</strong>
         </div>
-        <div style="font-size: 13px; color: var(--gray-500);">
+        <div class="settings-dev-sub">
             Developed for LGU Passi City<br>
             City Disaster Risk Reduction & Management Office
         </div>
-        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--gray-300);">
-            <div style="font-size: 12px; color: var(--gray-500);">
+        <div class="settings-dev-footer">
+            <div class="settings-dev-copy">
                 © <?php echo date('Y'); ?> CDRRMO Inventory System. All rights reserved.
             </div>
         </div>
     </div>
-</div>
+</div> -->
 
 <?php require_once 'includes/footer.php'; ?>

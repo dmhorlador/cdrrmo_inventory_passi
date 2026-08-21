@@ -11,132 +11,77 @@ $categories = $conn->query("SELECT id, category_name FROM categories WHERE is_ac
 $storage_locations = $conn->query("SELECT id, location_name FROM storage_locations WHERE is_active = 1 ORDER BY location_name");
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $category_id = (int)$_POST['category_id'];
-    $item_description = sanitize_input($_POST['item_description']);
-    $unit = sanitize_input($_POST['unit']);
-    $unit_cost = (float)$_POST['unit_cost'];
-    $minimum_stock_level = (int)$_POST['minimum_stock_level'];
-    $storage_location_id = !empty($_POST['storage_location_id']) ? (int)$_POST['storage_location_id'] : null;
-    $expiration_date = !empty($_POST['expiration_date']) ? $_POST['expiration_date'] : null;
-    $items_received = (int)$_POST['items_received'];
-    $items_distributed = (int)$_POST['items_distributed'];
-    $items_on_hand = $items_received - $items_distributed;
-    
-    // Generate item code
-    $stmt = $conn->prepare("CALL sp_generate_item_code(?, @item_code)");
-    $stmt->bind_param("i", $category_id);
-    $stmt->execute();
-    $stmt->close();
-    
-    $result = $conn->query("SELECT @item_code as item_code");
-    $item_code = $result->fetch_assoc()['item_code'];
-    
-    // Insert item
-    $stmt = $conn->prepare("
-        INSERT INTO inventory_items (
-            item_code, category_id, item_description, unit, unit_cost,
-            minimum_stock_level, storage_location_id, expiration_date,
-            items_received, items_distributed, items_on_hand,
-            created_by
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    ");
-    
-    $stmt->bind_param(
-        "sissdiisiiii",
-        $item_code, $category_id, $item_description, $unit, $unit_cost,
-        $minimum_stock_level, $storage_location_id, $expiration_date,
-        $items_received, $items_distributed, $items_on_hand,
-        $_SESSION['user_id']
-    );
-    
-    if ($stmt->execute()) {
-        log_activity($_SESSION['user_id'], 'create_item', "Created item: $item_code - $item_description");
-        $_SESSION['success'] = "Item added successfully!";
+    $category_id          = (int)$_POST['category_id'];
+    $unit                 = sanitize_input($_POST['unit']);
+    $unit_cost            = (float)$_POST['unit_cost'];
+    $minimum_stock_level  = (int)$_POST['minimum_stock_level'];
+    $storage_location_id  = !empty($_POST['storage_location_id']) ? (int)$_POST['storage_location_id'] : null;
+    $expiration_date      = !empty($_POST['expiration_date']) ? $_POST['expiration_date'] : null;
+
+    $descriptions    = $_POST['item_description'];
+    $items_received  = $_POST['items_received'];
+    $items_distributed = $_POST['items_distributed'];
+
+    $errors    = [];
+    $successes = 0;
+
+    foreach ($descriptions as $i => $raw_desc) {
+        $item_description  = sanitize_input($raw_desc);
+        if (empty($item_description)) continue; // skip blank rows
+
+        $recv = (int)$items_received[$i];
+        $dist = (int)$items_distributed[$i];
+        $on_hand = $recv - $dist;
+
+        // Generate item code
+        $stmt = $conn->prepare("CALL sp_generate_item_code(?, @item_code)");
+        $stmt->bind_param("i", $category_id);
+        $stmt->execute();
+        $stmt->close();
+
+        $result    = $conn->query("SELECT @item_code as item_code");
+        $item_code = $result->fetch_assoc()['item_code'];
+
+        // Insert item
+        $stmt = $conn->prepare("
+            INSERT INTO inventory_items (
+                item_code, category_id, item_description, unit, unit_cost,
+                minimum_stock_level, storage_location_id, expiration_date,
+                items_received, items_distributed, items_on_hand,
+                created_by
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
+
+        $stmt->bind_param(
+            "sissdiisiiii",
+            $item_code, $category_id, $item_description, $unit, $unit_cost,
+            $minimum_stock_level, $storage_location_id, $expiration_date,
+            $recv, $dist, $on_hand,
+            $_SESSION['user_id']
+        );
+
+        if ($stmt->execute()) {
+            log_activity($_SESSION['user_id'], 'create_item', "Created item: $item_code - $item_description");
+            $successes++;
+        } else {
+            $errors[] = "Failed to add row " . ($i + 1) . ": $item_description";
+        }
+        $stmt->close();
+    }
+
+    if ($successes > 0 && empty($errors)) {
+        $_SESSION['success'] = "$successes item(s) added successfully!";
         header('Location: inventory.php');
         exit();
+    } elseif ($successes > 0) {
+        $_SESSION['success'] = "$successes item(s) added. Some rows had errors.";
     } else {
-        $error = "Failed to add item. Please try again.";
+        $error = "Failed to add items. Please try again.";
     }
-    $stmt->close();
 }
 
 require_once 'includes/header.php';
 ?>
-
-<style>
-.inventory-form {
-    max-width: 900px;
-    margin: 0 auto;
-    background: white;
-    padding: 40px;
-    border-radius: 8px;
-    box-shadow: var(--shadow);
-}
-.form-header {
-    text-align: center;
-    margin-bottom: 30px;
-    border-bottom: 3px solid var(--primary);
-    padding-bottom: 20px;
-}
-.form-header h1 {
-    margin: 0;
-    color: var(--primary);
-    font-size: 28px;
-    font-weight: 700;
-}
-.form-header h2 {
-    margin: 5px 0 0 0;
-    color: var(--gray-700);
-    font-size: 16px;
-    font-weight: 600;
-}
-.form-header h3 {
-    margin: 10px 0 0 0;
-    color: var(--gray-600);
-    font-size: 14px;
-    font-weight: 600;
-    text-transform: uppercase;
-}
-.inventory-table {
-    width: 100%;
-    border-collapse: collapse;
-    margin: 20px 0;
-}
-.inventory-table th {
-    background: var(--primary);
-    color: white;
-    padding: 12px;
-    text-align: center;
-    font-size: 13px;
-    font-weight: 600;
-    border: 1px solid var(--gray-300);
-}
-.inventory-table td {
-    padding: 10px;
-    border: 1px solid var(--gray-300);
-    vertical-align: middle;
-}
-.inventory-table input,
-.inventory-table textarea,
-.inventory-table select {
-    width: 100%;
-    border: 1px solid var(--gray-300);
-    padding: 8px;
-    border-radius: 4px;
-}
-.inventory-table textarea {
-    min-height: 60px;
-    resize: vertical;
-}
-.calculated-field {
-    background: var(--primary-50);
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--primary);
-    text-align: center;
-    padding: 12px !important;
-}
-</style>
 
 <div class="inventory-form">
     <div class="form-header">
@@ -144,23 +89,22 @@ require_once 'includes/header.php';
         <h2>DISASTER RISK REDUCTION & MANAGEMENT OFFICE</h2>
         <h3>INVENTORY OF SUPPLIES</h3>
     </div>
-    
+
     <?php if (isset($error)): ?>
         <div class="alert alert-error">
             <i class="fas fa-exclamation-circle"></i> <?php echo $error; ?>
         </div>
     <?php endif; ?>
-    
+
     <form method="POST" action="">
-        <div class="form-group" style="margin-bottom: 20px;">
-            <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                Select Category *
-            </label>
-            <select name="category_id" class="form-control" required style="font-size: 14px; padding: 10px;">
+        <!-- Shared metadata -->
+        <div class="form-group form-group-main">
+            <label class="form-label">Select Category *</label>
+            <select name="category_id" class="form-control" required>
                 <option value="">-- Select Category --</option>
-                <?php 
+                <?php
                 $categories->data_seek(0);
-                while ($cat = $categories->fetch_assoc()): 
+                while ($cat = $categories->fetch_assoc()):
                 ?>
                     <option value="<?php echo $cat['id']; ?>">
                         <?php echo htmlspecialchars($cat['category_name']); ?>
@@ -168,41 +112,54 @@ require_once 'includes/header.php';
                 <?php endwhile; ?>
             </select>
         </div>
-        
-        <!-- Additional Fields -->
-        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                    Unit of Measurement *
-                </label>
-                <input type="text" name="unit" class="form-control" required placeholder="pcs, boxes, bottles, kg, etc." style="padding: 10px;">
+
+        <div class="form-grid-3">
+            <div class="form-group form-grid-col">
+                <label class="form-label">Unit of Measurement *</label>
+                <select name="unit" class="form-control" required>
+                    <option value="" disabled selected>-- Select Unit --</option>
+                    <option value="pcs">pcs (Pieces)</option>
+                    <option value="boxes">boxes</option>
+                    <option value="packs">packs</option>
+                    <option value="bottles">bottles</option>
+                    <option value="cans">cans</option>
+                    <option value="rolls">rolls</option>
+                    <option value="sets">sets</option>
+                    <option value="pairs">pairs</option>
+                    <option value="cases">cases</option>
+                    <option value="bundles">bundles</option>
+                    <option value="pads">pads</option>
+                    <option value="sacks">sacks</option>
+                    <option value="ream">ream</option>
+                    <option value="dozen">dozen</option>
+                    <option value="kg">kg (Kilograms)</option>
+                    <option value="g">g (Grams)</option>
+                    <option value="liters">liters</option>
+                    <option value="gallons">gallons</option>
+                    <option value="meters">meters</option>
+                    <option value="units">units</option>
+                </select>
             </div>
-            
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                    Unit Cost (₱) *
-                </label>
-                <input type="number" name="unit_cost" class="form-control" step="0.01" min="0" required placeholder="0.00" style="padding: 10px;">
+
+            <div class="form-group form-grid-col">
+                <label class="form-label">Unit Cost (₱) *</label>
+                <input type="number" name="unit_cost" class="form-control" step="0.01" min="0" required placeholder="0.00">
             </div>
-            
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                    Minimum Stock Level *
-                </label>
-                <input type="number" name="minimum_stock_level" class="form-control" min="1" required value="5" style="padding: 10px;">
+
+            <div class="form-group form-grid-col">
+                <label class="form-label">Minimum Stock Level *</label>
+                <input type="number" name="minimum_stock_level" class="form-control" min="1" required value="5">
             </div>
         </div>
-        
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                    Storage Location
-                </label>
-                <select name="storage_location_id" class="form-control" style="padding: 10px;">
+
+        <div class="form-grid-2">
+            <div class="form-group form-grid-col">
+                <label class="form-label">Storage Location</label>
+                <select name="storage_location_id" class="form-control">
                     <option value="">-- Select Storage Location --</option>
-                    <?php 
+                    <?php
                     $storage_locations->data_seek(0);
-                    while ($loc = $storage_locations->fetch_assoc()): 
+                    while ($loc = $storage_locations->fetch_assoc()):
                     ?>
                         <option value="<?php echo $loc['id']; ?>">
                             <?php echo htmlspecialchars($loc['location_name']); ?>
@@ -210,17 +167,16 @@ require_once 'includes/header.php';
                     <?php endwhile; ?>
                 </select>
             </div>
-            
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="font-weight: 600; margin-bottom: 8px; display: block;">
-                    Expiration Date (Optional)
-                </label>
-                <input type="date" name="expiration_date" class="form-control" style="padding: 10px;">
-                <small style="color: var(--gray-500); font-size: 12px;">Leave blank if item does not expire</small>
+
+            <div class="form-group form-grid-col">
+                <label class="form-label">Expiration Date (Optional)</label>
+                <input type="date" name="expiration_date" class="form-control">
+                <small class="password-hint">Leave blank if item does not expire</small>
             </div>
         </div>
-        
-        <table class="inventory-table">
+
+        <!-- Multi-row item table -->
+        <table class="inventory-table" id="items-table">
             <thead>
                 <tr>
                     <th style="width: 60px;">No.</th>
@@ -228,34 +184,45 @@ require_once 'includes/header.php';
                     <th style="width: 120px;">No. of items<br>received</th>
                     <th style="width: 120px;">No. of items<br>distributed</th>
                     <th style="width: 120px;">No. of items<br>on hand</th>
+                    <th style="width: 60px;"></th>
                 </tr>
             </thead>
-            <tbody>
-                <tr>
-                    <td style="text-align: center; background: var(--gray-100); font-weight: 600;">1</td>
+            <tbody id="items-tbody">
+                <tr data-row="0">
+                    <td class="item-row-number">1</td>
                     <td>
-                        <textarea name="item_description" required placeholder="Enter item description&#10;e.g., Book paper 70 GSM 8.5 inch x 13 inch"></textarea>
+                        <textarea name="item_description[]" required
+                            placeholder="Enter item description&#10;e.g., Book paper 70 GSM 8.5 inch x 13 inch"></textarea>
                     </td>
-                    <td style="text-align: center;">
-                        <input type="number" name="items_received" id="items_received" min="0" value="0" required 
-                            onchange="calculateOnHand()" style="text-align: center; font-size: 16px;">
+                    <td style="text-align:center;">
+                        <input type="number" name="items_received[]" min="0" value="0" required
+                            oninput="calculateOnHand(this)" style="text-align:center;font-size:16px;">
                     </td>
-                    <td style="text-align: center;">
-                        <input type="number" name="items_distributed" id="items_distributed" min="0" value="0" required 
-                            onchange="calculateOnHand()" style="text-align: center; font-size: 16px;">
+                    <td style="text-align:center;">
+                        <input type="number" name="items_distributed[]" min="0" value="0" required
+                            oninput="calculateOnHand(this)" style="text-align:center;font-size:16px;">
                     </td>
                     <td class="calculated-field">
-                        <span id="items_on_hand">0</span>
+                        <span class="on-hand-display">0</span>
+                    </td>
+                    <td style="text-align:center;">
+                        <!-- First row has no remove button -->
                     </td>
                 </tr>
             </tbody>
         </table>
-        
-        <div style="display: flex; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 2px solid var(--gray-200);">
-            <button type="submit" class="btn btn-success" style="font-size: 15px; padding: 12px 30px;">
-                <i class="fas fa-save"></i> Add Item to Inventory
+
+        <div style="margin: 10px 0 20px;">
+            <button type="button" class="btn btn-secondary" onclick="addRow()">
+                <i class="fas fa-plus"></i> Add Another Item
             </button>
-            <a href="inventory.php" class="btn btn-secondary" style="font-size: 15px; padding: 12px 30px;">
+        </div>
+
+        <div class="form-actions">
+            <button type="submit" class="btn btn-success btn-lg">
+                <i class="fas fa-save"></i> Add Item(s) to Inventory
+            </button>
+            <a href="inventory.php" class="btn btn-secondary btn-lg">
                 <i class="fas fa-times"></i> Cancel
             </a>
         </div>
@@ -263,12 +230,75 @@ require_once 'includes/header.php';
 </div>
 
 <script>
-function calculateOnHand() {
-    const received = parseInt(document.getElementById('items_received').value) || 0;
-    const distributed = parseInt(document.getElementById('items_distributed').value) || 0;
-    const onHand = received - distributed;
-    document.getElementById('items_on_hand').textContent = onHand;
+let rowCount = 1;
+
+function calculateOnHand(inputEl) {
+    const row = inputEl.closest('tr');
+    const received    = parseInt(row.querySelector('input[name="items_received[]"]').value)    || 0;
+    const distributed = parseInt(row.querySelector('input[name="items_distributed[]"]').value) || 0;
+    row.querySelector('.on-hand-display').textContent = received - distributed;
 }
+
+function addRow() {
+    const tbody = document.getElementById('items-tbody');
+    const newRow = document.createElement('tr');
+    newRow.dataset.row = rowCount;
+
+    newRow.innerHTML = `
+        <td class="item-row-number">${rowCount + 1}</td>
+        <td>
+            <textarea name="item_description[]"
+                placeholder="Enter item description"></textarea>
+        </td>
+        <td style="text-align:center;">
+            <input type="number" name="items_received[]" min="0" value="0"
+                oninput="calculateOnHand(this)" style="text-align:center;font-size:16px;">
+        </td>
+        <td style="text-align:center;">
+            <input type="number" name="items_distributed[]" min="0" value="0"
+                oninput="calculateOnHand(this)" style="text-align:center;font-size:16px;">
+        </td>
+        <td class="calculated-field">
+            <span class="on-hand-display">0</span>
+        </td>
+        <td style="text-align:center;">
+            <button type="button" onclick="removeRow(this)" class="btn btn-danger btn-sm"
+                title="Remove row" style="padding:4px 8px;">
+                <i class="fas fa-trash"></i>
+            </button>
+        </td>
+    `;
+
+    tbody.appendChild(newRow);
+    rowCount++;
+    renumberRows();
+
+    // Focus the new textarea
+    newRow.querySelector('textarea').focus();
+}
+
+function removeRow(btn) {
+    const row = btn.closest('tr');
+    row.remove();
+    renumberRows();
+}
+
+function renumberRows() {
+    document.querySelectorAll('#items-tbody tr').forEach((row, i) => {
+        row.querySelector('.item-row-number').textContent = i + 1;
+    });
+}
+
+// Loading indicator on submit
+document.addEventListener('DOMContentLoaded', function () {
+    const form = document.querySelector('form');
+    if (form) {
+        form.addEventListener('submit', function () {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) showFormLoading('Adding items to inventory...');
+        });
+    }
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>

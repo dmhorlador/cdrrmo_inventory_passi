@@ -155,7 +155,7 @@ $users = $conn->query("
 require_once 'includes/header.php';
 ?>
 
-<div style="margin-bottom: 20px; margin-right: 5px; text-align: right;">
+<div class="users-actions">
     <button class="btn btn-success" onclick="showAddUserModal()">
         <i class="fas fa-plus"></i> Add New User
     </button>
@@ -203,7 +203,7 @@ require_once 'includes/header.php';
                             <?php if ($user['id'] === $_SESSION['user_id']): ?>
                                 <span class="badge badge-primary"><?php echo ucfirst($user['role']); ?></span>
                             <?php else: ?>
-                                <select class="form-control" style="width: 120px;" onchange="updateUserRole(<?php echo $user['id']; ?>, this.value)">
+                                <select class="form-control user-role-select" onchange="updateUserRole(<?php echo $user['id']; ?>, this.value)">
                                     <option value="admin" <?php echo $user['role'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
                                     <option value="staff" <?php echo $user['role'] === 'staff' ? 'selected' : ''; ?>>Staff</option>
                                 </select>
@@ -213,7 +213,7 @@ require_once 'includes/header.php';
                             <?php if ($user['id'] === $_SESSION['user_id']): ?>
                                 <span class="badge badge-success">Active (You)</span>
                             <?php else: ?>
-                                <label style="cursor: pointer;">
+                                <label class="user-checkbox-label">
                                     <input 
                                         type="checkbox" 
                                         <?php echo $user['is_active'] ? 'checked' : ''; ?>
@@ -236,7 +236,7 @@ require_once 'includes/header.php';
                         </td>
                         <td><?php echo htmlspecialchars($user['created_by_name'] ?? 'System'); ?></td>
                         <td>
-                            <div style="display: flex; gap: 5px;">
+                            <div class="user-action-btns">
                                 <?php if ($user['id'] !== $_SESSION['user_id']): ?>
                                     <!-- <button class="btn btn-sm btn-info" onclick="viewPassword(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars($user['plain_password'] ?? 'N/A', ENT_QUOTES); ?>')" title="View Password">
                                         <i class="fas fa-eye"></i>
@@ -368,7 +368,7 @@ require_once 'includes/header.php';
             <input type="hidden" name="action" value="reset_password">
             <input type="hidden" name="user_id" id="reset_user_id">
             <div class="modal-body">
-                <p style="margin-bottom: 15px;">Resetting password for: <strong id="reset_username"></strong></p>
+                <p class="reset-pw-note">Resetting password for: <strong id="reset_username"></strong></p>
                 
                 <div class="form-group">
                     <label class="form-label">New Password *</label>
@@ -394,7 +394,7 @@ require_once 'includes/header.php';
             <button class="modal-close" onclick="hideViewPasswordModal()">&times;</button>
         </div>
         <div class="modal-body">
-            <div style="background: var(--primary-50); padding: 20px; border-radius: 8px; text-align: center;">
+            <div class="item-code-banner">
                 <div style="font-size: 13px; color: var(--gray-600); margin-bottom: 10px;">Password</div>
                 <div style="font-size: 24px; font-weight: 700; color: var(--primary); font-family: monospace;" id="user_password">
                     N/A

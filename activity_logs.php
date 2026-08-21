@@ -104,11 +104,11 @@ require_once 'includes/header.php';
 ?>
 
 <!-- Filters -->
-<div class="card" style="margin-bottom: 20px; padding: 20px;">
+<div class="card filter-card">
     <form method="GET" action="activity_logs.php">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Search</label>
+        <div class="filter-grid">
+            <div class="form-group filter-group-inline">
+                <label class="form-label">Search</label>
                 <input 
                     type="text" 
                     name="search" 
@@ -118,8 +118,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">User</label>
+            <div class="form-group filter-group-inline">
+                <label class="form-label">User</label>
                 <select name="user" class="form-control">
                     <option value="">All Users</option>
                     <?php while ($user = $users->fetch_assoc()): ?>
@@ -130,8 +130,8 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Action</label>
+            <div class="form-group filter-group-inline">
+                <label class="form-label">Action</label>
                 <select name="action" class="form-control">
                     <option value="">All Actions</option>
                     <?php while ($act = $actions->fetch_assoc()): ?>
@@ -142,8 +142,8 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Date From</label>
+            <div class="form-group filter-group-inline">
+                <label class="form-label">Date From</label>
                 <input 
                     type="date" 
                     name="date_from" 
@@ -152,8 +152,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Date To</label>
+            <div class="form-group filter-group-inline">
+                <label class="form-label">Date To</label>
                 <input 
                     type="date" 
                     name="date_to" 
@@ -162,8 +162,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div style="display: flex; align-items: flex-end; gap: 10px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
+            <div class="filter-actions-row">
+                <button type="submit" class="btn btn-primary btn-flex">
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 <?php if ($search || $user_filter || $action_filter || $date_from || $date_to): ?>
@@ -201,18 +201,18 @@ require_once 'includes/header.php';
                     <?php while ($log = $logs->fetch_assoc()): ?>
                         <tr>
                             <td>
-                                <div style="font-weight: 600; color: var(--gray-800);">
+                                <div class="log-user-name">
                                     <?php echo date('M d, Y', strtotime($log['created_at'])); ?>
                                 </div>
-                                <div style="font-size: 12px; color: var(--gray-500);">
+                                <div class="log-user-meta">
                                     <?php echo date('h:i:s A', strtotime($log['created_at'])); ?>
                                 </div>
                             </td>
                             <td>
-                                <div style="font-weight: 600; color: var(--gray-800);">
+                                <div class="log-user-name">
                                     <?php echo htmlspecialchars($log['full_name'] ?? 'System'); ?>
                                 </div>
-                                <div style="font-size: 12px; color: var(--gray-500);">
+                                <div class="log-user-meta">
                                     @<?php echo htmlspecialchars($log['username'] ?? 'system'); ?>
                                 </div>
                             </td>
@@ -226,7 +226,7 @@ require_once 'includes/header.php';
                                 </span>
                             </td>
                             <td>
-                                <strong style="color: var(--primary);">
+                                <strong class="log-action-primary">
                                     <?php echo ucwords(str_replace('_', ' ', $log['action'])); ?>
                                 </strong>
                             </td>
@@ -258,7 +258,7 @@ require_once 'includes/header.php';
                                 ?>
                             </td>
                             <td>
-                                <code style="font-size: 12px; color: var(--gray-600);">
+                                <code class="log-code">
                                     <?php echo htmlspecialchars($log['ip_address'] ?? '-'); ?>
                                 </code>
                             </td>

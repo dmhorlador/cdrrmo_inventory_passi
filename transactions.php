@@ -140,7 +140,7 @@ require_once 'includes/header.php';
 ?>
 
 <!-- Statistics Cards -->
-<div class="dashboard-cards" style="margin-bottom: 30px;">
+<div class="dashboard-cards transactions-stats">
     <div class="card stat-card">
         <div class="stat-icon green">
             <i class="fas fa-arrow-down"></i>
@@ -183,11 +183,11 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Filters -->
-<div class="card" style="margin-bottom: 20px; padding: 20px;">
+<div class="card transactions-filter-card">
     <form method="GET" action="transactions.php">
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Search</label>
+        <div class="transactions-filter-grid">
+            <div class="form-group transactions-filter-group">
+                <label class="form-label">Search</label>
                 <input 
                     type="text" 
                     name="search" 
@@ -197,8 +197,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Transaction Type</label>
+            <div class="form-group transactions-filter-group">
+                <label class="form-label">Transaction Type</label>
                 <select name="type" class="form-control">
                     <option value="">All Types</option>
                     <option value="received" <?php echo $type_filter === 'received' ? 'selected' : ''; ?>>Received</option>
@@ -210,8 +210,8 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Category</label>
+            <div class="form-group transactions-filter-group">
+                <label class="form-label">Category</label>
                 <select name="category" class="form-control">
                     <option value="">All Categories</option>
                     <?php 
@@ -225,8 +225,8 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Date From</label>
+            <div class="form-group transactions-filter-group">
+                <label class="form-label">Date From</label>
                 <input 
                     type="date" 
                     name="date_from" 
@@ -235,8 +235,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div class="form-group" style="margin: 0;">
-                <label class="form-label" style="margin-bottom: 5px;">Date To</label>
+            <div class="form-group transactions-filter-group">
+                <label class="form-label">Date To</label>
                 <input 
                     type="date" 
                     name="date_to" 
@@ -245,8 +245,8 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <div style="display: flex; align-items: flex-end; gap: 10px;">
-                <button type="submit" class="btn btn-primary" style="flex: 1;">
+            <div class="filter-actions-row">
+                <button type="submit" class="btn btn-primary btn-flex">
                     <i class="fas fa-filter"></i> Filter
                 </button>
                 <?php if ($search || $type_filter || $category_filter || $date_from || $date_to): ?>
@@ -265,7 +265,7 @@ require_once 'includes/header.php';
 <div class="table-container">
     <div class="table-header">
         <h3 class="table-title">Transaction History (<?php echo number_format($total); ?> records)</h3>
-        <div style="display: flex; gap: 10px;">
+        <div class="flex gap-10">
             <button class="btn btn-sm btn-primary" onclick="printTransactions()">
                 <i class="fas fa-print"></i> Print
             </button>
@@ -295,7 +295,7 @@ require_once 'includes/header.php';
                     <?php while ($row = $transactions->fetch_assoc()): ?>
                         <tr>
                             <td>
-                                <strong style="color: var(--primary);">
+                                <strong class="log-action-primary">
                                     <?php echo htmlspecialchars($row['transaction_code']); ?>
                                 </strong>
                             </td>
@@ -337,10 +337,10 @@ require_once 'includes/header.php';
                                 </span>
                             </td>
                             <td>
-                                <div style="font-weight: 600; color: var(--gray-800); margin-bottom: 2px;">
+                                <div class="dashboard-item-code">
                                     <?php echo htmlspecialchars($row['item_code']); ?>
                                 </div>
-                                <div style="font-size: 13px; color: var(--gray-600);">
+                                <div class="log-user-meta">
                                     <?php echo htmlspecialchars($row['item_description']); ?>
                                 </div>
                             </td>
@@ -395,7 +395,7 @@ require_once 'includes/header.php';
                 <?php else: ?>
                     <tr>
                         <td colspan="12" class="text-center">
-                            <div style="padding: 40px;">
+                            <div class="txn-card-body">
                                 <i class="fas fa-inbox" style="font-size: 48px; color: var(--gray-400); margin-bottom: 15px;"></i>
                                 <h3 style="color: var(--gray-500); margin: 0;">No transactions found</h3>
                                 <p style="color: var(--gray-400); margin-top: 10px;">Try adjusting your filters or add new transactions</p>

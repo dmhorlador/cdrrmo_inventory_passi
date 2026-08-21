@@ -25,7 +25,7 @@ $selected_item_id = isset($_GET['item_id']) ? (int)$_GET['item_id'] : 0;
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $item_id = (int)$_POST['item_id'];
     $quantity = (int)$_POST['quantity'];
-    $unit_cost = (float)$_POST['unit_cost'];
+    $unit_cost = isset($_POST['unit_cost']) ? (float)$_POST['unit_cost'] : 0.00;
     $transaction_date = sanitize_input($_POST['transaction_date']);
     $supplier_id = !empty($_POST['supplier_id']) ? (int)$_POST['supplier_id'] : null;
     $reference_number = sanitize_input($_POST['reference_number']);
@@ -59,7 +59,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         
         if ($stmt->execute()) {
-            // Update inventory
+            $transaction_id = $conn->insert_id;
+
+            // ── BATCH RECORD: Insert a new row into item_batches ──────────────
+            // Each receive creates a SEPARATE batch so expiration dates are preserved.
+            $batch_stmt = $conn->prepare("
+                INSERT INTO item_batches (
+                    item_id, transaction_id, batch_number, ris_no,
+                    quantity_received, quantity_on_hand, unit_cost,
+                    expiration_date, received_date, notes
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ");
+            $batch_stmt->bind_param(
+                "iissiidsss",
+                $item_id, $transaction_id, $batch_number, $reference_number,
+                $quantity, $quantity, $unit_cost,
+                $expiration_date, $transaction_date, $notes
+            );
+            $batch_stmt->execute();
+            $batch_stmt->close();
+            // ── END BATCH RECORD ──────────────────────────────────────────────
+
+            // Update inventory totals (unchanged — items table stays consistent)
             $update_stmt = $conn->prepare("
                 UPDATE inventory_items 
                 SET items_received = items_received + ?,
@@ -93,13 +114,13 @@ require_once 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <div style="padding: 30px;">
-        <h2 style="margin-bottom: 20px; color: var(--primary);">
+<div class="card txn-card-wrap">
+    <div class="txn-card-body">
+        <h2 class="txn-card-title">
             <i class="fas fa-plus-circle"></i> Receive Items
         </h2>
         
-        <p style="color: var(--gray-600); margin-bottom: 30px;">
+        <p class="txn-card-desc">
             Record incoming inventory items from suppliers or other sources.
         </p>
         
@@ -112,15 +133,15 @@ require_once 'includes/header.php';
         <form method="POST" action="" id="receiveForm">
             <div class="form-group">
                 <label class="form-label">Select Item *</label>
-                <div style="position: relative;" id="itemComboWrapper">
-                    <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; pointer-events:none; z-index:1;"></i>
+                <div class="txn-autocomplete-wrap" id="itemComboWrapper">
+                    <i class="fas fa-search" style="position:absolute; left:2px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; pointer-events:none; z-index:1;"></i>
                     <input
                         type="text"
                         id="itemSearch"
                         class="form-control"
                         placeholder="Type item code or name to search..."
                         autocomplete="off"
-                        style="padding-left: 34px; padding-right: 34px;"
+                        class="item-search-padded"
                         required
                     >
                     <i class="fas fa-times" id="itemClearBtn" onclick="clearItemSearch()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; cursor:pointer; display:none;"></i>
@@ -145,7 +166,7 @@ require_once 'includes/header.php';
             </div>
 
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label class="form-label">Quantity Received *</label>
                     <input type="number" name="quantity" class="form-control" min="1" required 
@@ -154,7 +175,7 @@ require_once 'includes/header.php';
                 
                 <div class="form-group">
                     <label class="form-label">Unit <span id="unitDisplay"></span></label>
-                    <div style="background: var(--gray-100); padding: 12px 15px; border-radius: 6px; font-weight: 600; color: var(--gray-700);">
+                    <div class="return-modal-item-display">
                         <span id="unitText">-</span>
                     </div>
                 </div>
@@ -202,8 +223,8 @@ require_once 'includes/header.php';
                 </div>
                 
                 <div class="form-group">
-                    <label class="form-label">Batch Number</label>
-                    <input type="text" name="batch_number" class="form-control" 
+                    <label class="form-label">Batch Number *</label>
+                    <input type="text" name="batch_number" class="form-control" required
                         placeholder="Batch/Lot number">
                 </div>
                 
@@ -219,7 +240,7 @@ require_once 'includes/header.php';
                     placeholder="Additional notes or comments about this transaction"></textarea>
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--gray-200);">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-success">
                     <i class="fas fa-check"></i> Receive Items
                 </button>
@@ -271,7 +292,7 @@ while ($item = $items->fetch_assoc()):
         if(!q) return esc(text);
         const i = text.toLowerCase().indexOf(q.toLowerCase());
         if(i === -1) return esc(text);
-        return esc(text.slice(0,i)) + '<mark style="background:#fef9c3;border-radius:2px;padding:0 1px;">' + esc(text.slice(i,i+q.length)) + '</mark>' + esc(text.slice(i+q.length));
+        return esc(text.slice(0,i)) + '<mark class="highlight-match">' + esc(text.slice(i,i+q.length)) + '</mark>' + esc(text.slice(i+q.length));
     }
 
     function openDropdown(q){
@@ -279,7 +300,7 @@ while ($item = $items->fetch_assoc()):
         activeIdx = -1;
         dropdown.innerHTML = '';
         if(filtered.length === 0){
-            dropdown.innerHTML = '<li style="padding:10px 14px;color:#9ca3af;font-size:13px;">No items found.</li>';
+            dropdown.innerHTML = '<li class="item-dropdown-empty">No items found.</li>';
         } else {
             filtered.forEach(function(it, i){
                 const li = document.createElement('li');
@@ -362,6 +383,19 @@ function resetForm() {
     document.getElementById('totalCost').textContent = '0.00';
     document.getElementById('itemClearBtn').style.display = 'none';
 }
+
+// Add loading indicator to form submission
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('receiveForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            if (submitBtn) {
+                showFormLoading('Processing item receipt...');
+            }
+        });
+    }
+});
 </script>
 
 <?php require_once 'includes/footer.php'; ?>

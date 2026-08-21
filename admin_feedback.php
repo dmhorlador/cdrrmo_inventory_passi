@@ -85,17 +85,17 @@ require_once 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <h2 style="margin-bottom: 15px; color: var(--primary);">
+<div class="card filter-card">
+    <div class="filter-card-body feedback-filter-sm" style="padding:20px;">
+        <h2 class="txn-card-title">
             <i class="fas fa-comment-dots"></i> User Feedback Management
         </h2>
         
         <!-- Filters -->
-        <form method="GET" style="display: flex; gap: 15px; align-items: end;">
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px;">Status</label>
-                <select name="status" class="form-control" style="padding: 8px 12px; font-size: 13px;">
+        <form method="GET" class="feedback-filter-form">
+            <div class="form-group feedback-filter-group">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-control">
                     <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All Status</option>
                     <option value="pending" <?php echo $status_filter === 'pending' ? 'selected' : ''; ?>>Pending</option>
                     <option value="reviewing" <?php echo $status_filter === 'reviewing' ? 'selected' : ''; ?>>Reviewing</option>
@@ -104,9 +104,9 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <div class="form-group" style="margin-bottom: 0;">
-                <label class="form-label" style="font-size: 12px;">Type</label>
-                <select name="type" class="form-control" style="padding: 8px 12px; font-size: 13px;">
+            <div class="form-group feedback-filter-group">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-control">
                     <option value="all" <?php echo $type_filter === 'all' ? 'selected' : ''; ?>>All Types</option>
                     <option value="bug" <?php echo $type_filter === 'bug' ? 'selected' : ''; ?>>Bug Report</option>
                     <option value="suggestion" <?php echo $type_filter === 'suggestion' ? 'selected' : ''; ?>>Suggestion</option>
@@ -116,37 +116,37 @@ require_once 'includes/header.php';
                 </select>
             </div>
             
-            <button type="submit" class="btn btn-primary" style="padding: 8px 16px; font-size: 13px;">
+            <button type="submit" class="btn btn-primary">
                 <i class="fas fa-filter"></i> Filter
             </button>
-            <a href="admin_feedback.php" class="btn btn-secondary" style="padding: 8px 16px; font-size: 13px;">
+            <a href="admin_feedback.php" class="btn btn-secondary">
                 <i class="fas fa-redo"></i> Reset
             </a>
         </form>
     </div>
 </div>
 
-<div style="display: grid; gap: 15px;">
+<div class="feedback-list-grid">
     <?php if ($feedback_list->num_rows > 0): ?>
         <?php while ($feedback = $feedback_list->fetch_assoc()): ?>
             <div class="card">
-                <div style="padding: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                <div class="filter-card-body feedback-filter-sm" style="padding:20px;">
+                    <div class="feedback-card-header">
                         <div>
-                            <h3 style="margin: 0 0 8px 0; color: var(--gray-800); font-size: 16px;">
+                            <h3 class="feedback-card-title">
                                 <?php echo htmlspecialchars($feedback['subject']); ?>
                             </h3>
-                            <div style="display: flex; gap: 10px; align-items: center;">
-                                <span style="color: var(--gray-600); font-size: 13px;">
+                            <div class="feedback-card-meta">
+                                <span class="feedback-meta-date">
                                     <i class="fas fa-user"></i> <?php echo htmlspecialchars($feedback['user_name']); ?>
                                 </span>
-                                <span style="color: var(--gray-400);">•</span>
-                                <span style="color: var(--gray-500); font-size: 13px;">
+                                <span class="feedback-meta-sep">•</span>
+                                <span class="feedback-meta-type">
                                     <?php echo date('M d, Y g:i A', strtotime($feedback['created_at'])); ?>
                                 </span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 8px;">
+                        <div class="feedback-card-actions">
                             <?php
                             $type_colors = [
                                 'bug' => 'danger',
@@ -177,13 +177,13 @@ require_once 'includes/header.php';
                         </div>
                     </div>
                     
-                    <div style="background: var(--gray-50); padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid var(--gray-300);">
+                    <div class="feedback-message-box">
                         <p style="margin: 0; color: var(--gray-700); font-size: 14px; line-height: 1.6; white-space: pre-wrap;"><?php echo htmlspecialchars($feedback['message']); ?></p>
                     </div>
                     
                     <?php if ($feedback['admin_response']): ?>
-                        <div style="background: #dbeafe; padding: 15px; border-radius: 6px; margin-bottom: 15px; border-left: 3px solid var(--primary);">
-                            <div style="font-weight: 600; color: var(--primary); font-size: 12px; margin-bottom: 8px;">
+                        <div class="feedback-reply-box">
+                            <div class="feedback-reply-label">
                                 <i class="fas fa-reply"></i> Response by <?php echo htmlspecialchars($feedback['responded_by_name'] ?? 'Admin'); ?>
                                 <?php if ($feedback['responded_at']): ?>
                                     • <?php echo date('M d, Y', strtotime($feedback['responded_at'])); ?>
@@ -217,7 +217,7 @@ require_once 'includes/header.php';
                                 </select>
                             </div>
                             
-                            <div style="display: flex; gap: 10px;">
+                            <div class="feedback-reply-actions">
                                 <button type="submit" name="respond" class="btn btn-primary">
                                     <i class="fas fa-paper-plane"></i> Send Response
                                 </button>
@@ -232,10 +232,10 @@ require_once 'includes/header.php';
         <?php endwhile; ?>
     <?php else: ?>
         <div class="card">
-            <div style="text-align: center; padding: 60px; color: var(--gray-500);">
-                <i class="fas fa-comment-slash" style="font-size: 64px; margin-bottom: 20px; opacity: 0.3;"></i>
-                <h3 style="margin: 0;">No feedback found</h3>
-                <p style="margin-top: 10px;">No feedback matches your current filters.</p>
+            <div class="feedback-empty">
+                <i class="fas fa-comment-slash feedback-empty-icon"></i>
+                <h3>No feedback found</h3>
+                <p>No feedback matches your current filters.</p>
             </div>
         </div>
     <?php endif; ?>

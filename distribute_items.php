@@ -51,7 +51,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         $unit_cost = $item_data['unit_cost'];
         
-        // Insert transaction (total_cost is auto-generated)
+        // Insert distribution transaction
         $stmt = $conn->prepare("
             INSERT INTO transactions (
                 transaction_code, item_id, transaction_type, quantity, unit_cost,
@@ -68,7 +68,55 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         );
         
         if ($stmt->execute()) {
-            // Update inventory
+            $transaction_id = $conn->insert_id;
+
+            // ── FIFO BATCH DEDUCTION ──────────────────────────────────────────
+            // Fetch batches for this item ordered by earliest expiration first (FEFO).
+            // Batches without expiration date come last.
+            $batches_result = $conn->prepare("
+                SELECT id, quantity_on_hand
+                FROM item_batches
+                WHERE item_id = ? AND quantity_on_hand > 0
+                ORDER BY
+                    CASE WHEN expiration_date IS NULL THEN 1 ELSE 0 END ASC,
+                    expiration_date ASC,
+                    received_date ASC
+            ");
+            $batches_result->bind_param("i", $item_id);
+            $batches_result->execute();
+            $batches = $batches_result->get_result();
+            $batches_result->close();
+
+            $remaining_to_deduct = $quantity;
+
+            $deduct_batch_stmt = $conn->prepare(
+                "UPDATE item_batches SET quantity_on_hand = quantity_on_hand - ? WHERE id = ?"
+            );
+            $record_dist_stmt = $conn->prepare(
+                "INSERT INTO distribution_batches (transaction_id, batch_id, quantity_taken) VALUES (?, ?, ?)"
+            );
+
+            while ($batch = $batches->fetch_assoc()) {
+                if ($remaining_to_deduct <= 0) break;
+
+                $take = min($remaining_to_deduct, $batch['quantity_on_hand']);
+
+                // Deduct from this batch
+                $deduct_batch_stmt->bind_param("ii", $take, $batch['id']);
+                $deduct_batch_stmt->execute();
+
+                // Record which batch was used
+                $record_dist_stmt->bind_param("iii", $transaction_id, $batch['id'], $take);
+                $record_dist_stmt->execute();
+
+                $remaining_to_deduct -= $take;
+            }
+
+            $deduct_batch_stmt->close();
+            $record_dist_stmt->close();
+            // ── END FIFO BATCH DEDUCTION ──────────────────────────────────────
+
+            // Update inventory totals
             $update_stmt = $conn->prepare("
                 UPDATE inventory_items 
                 SET items_distributed = items_distributed + ?,
@@ -79,6 +127,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $update_stmt->bind_param("iiii", $quantity, $quantity, $_SESSION['user_id'], $item_id);
             $update_stmt->execute();
             $update_stmt->close();
+
+            // ── BORROWED ITEM STATUS TRACKING ────────────────────────────────
+            if ($is_borrowed) {
+                // Mark item as "In-Use" if borrowed
+                $current_status_result = $conn->query("SELECT item_status FROM inventory_items WHERE id = $item_id");
+                $current_status_row = $current_status_result->fetch_assoc();
+                $previous_status = $current_status_row['item_status'];
+
+                $status_reason = "Item borrowed and in use";
+                $status_notes = "Borrowed by: $recipient_name" . ($recipient_organization ? " ($recipient_organization)" : "");
+
+                $conn->query("CALL log_item_status_change(
+                    $item_id,
+                    $transaction_id,
+                    '$previous_status',
+                    'In-Use',
+                    '$status_reason',
+                    '$status_notes',
+                    NULL,
+                    NULL,
+                    {$_SESSION['user_id']}
+                )");
+            }
+            // ── END BORROWED ITEM STATUS TRACKING ────────────────────────────
             
             log_activity($_SESSION['user_id'], 'distribute_items', "Distributed $quantity items - Transaction: $transaction_code");
             
@@ -101,13 +173,13 @@ require_once 'includes/header.php';
     </div>
 <?php endif; ?>
 
-<div class="card" style="max-width: 800px; margin: 0 auto;">
-    <div style="padding: 30px;">
-        <h2 style="margin-bottom: 20px; color: var(--primary);">
+<div class="card txn-card-wrap">
+    <div class="txn-card-body">
+        <h2 class="txn-card-title">
             <i class="fas fa-minus-circle"></i> Distribute Items
         </h2>
         
-        <p style="color: var(--gray-600); margin-bottom: 30px;">
+        <p class="txn-card-desc">
             Record outgoing inventory items distributed to beneficiaries or other departments.
         </p>
         
@@ -120,15 +192,15 @@ require_once 'includes/header.php';
         <form method="POST" action="" id="distributeForm">
             <div class="form-group">
                 <label class="form-label">Select Item *</label>
-                <div style="position: relative;" id="itemComboWrapper">
-                    <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; pointer-events:none; z-index:1;"></i>
+                <div class="txn-autocomplete-wrap" id="itemComboWrapper">
+                    <i class="fas fa-search" style="position:absolute; left:2px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; pointer-events:none; z-index:1;"></i>
                     <input
                         type="text"
                         id="itemSearch"
                         class="form-control"
                         placeholder="Type item code or name to search..."
                         autocomplete="off"
-                        style="padding-left: 34px; padding-right: 34px;"
+                        class="item-search-padded"
                         required
                     >
                     <i class="fas fa-times" id="itemClearBtn" onclick="clearItemSearch()" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:13px; cursor:pointer; display:none;"></i>
@@ -153,19 +225,19 @@ require_once 'includes/header.php';
             </div>
 
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+            <div class="form-grid-2">
                 <div class="form-group">
                     <label class="form-label">Quantity to Distribute *</label>
                     <input type="number" name="quantity" id="quantity" class="form-control" min="1" required 
                         placeholder="Enter quantity">
-                    <small style="color: var(--gray-500); font-size: 12px;">
+                    <small class="password-hint">
                         Available: <strong id="availableStock">-</strong>
                     </small>
                 </div>
                 
                 <div class="form-group">
                     <label class="form-label">Unit</label>
-                    <div style="background: var(--gray-100); padding: 12px 15px; border-radius: 6px; font-weight: 600; color: var(--gray-700);">
+                    <div class="return-modal-item-display">
                         <span id="unitText">-</span>
                     </div>
                 </div>
@@ -177,24 +249,24 @@ require_once 'includes/header.php';
                     value="<?php echo date('Y-m-d'); ?>" max="<?php echo date('Y-m-d'); ?>">
             </div>
             
-            <div style="background: var(--primary-50); padding: 20px; border-radius: 8px; border-left: 4px solid var(--primary-light); margin: 20px 0;">
-                <h3 style="margin: 0 0 15px 0; color: var(--primary); font-size: 16px;">
+            <div class="info-box" style="margin:20px 0;">
+                <h3 class="txn-card-title">
                     <i class="fas fa-user"></i> Recipient Information
                 </h3>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group">
                     <label class="form-label">Recipient Name *</label>
                     <input type="text" name="recipient_name" class="form-control" required 
                         placeholder="Name of person receiving items">
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 15px;">
+                <div class="form-group">
                     <label class="form-label">Organization/Department</label>
                     <input type="text" name="recipient_organization" class="form-control" 
                         placeholder="Organization, department, or barangay">
                 </div>
                 
-                <div class="form-group" style="margin-bottom: 0;">
+                <div class="form-group">
                     <label class="form-label">Purpose of Distribution *</label>
                     <textarea name="purpose" class="form-control" rows="2" required 
                         placeholder="Reason or purpose for distributing these items"></textarea>
@@ -208,13 +280,13 @@ require_once 'includes/header.php';
             </div>
             
             <div class="form-group">
-                <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
-                    <input type="checkbox" name="is_borrowed" id="is_borrowed" value="1" style="width: 18px; height: 18px;">
-                    <span style="font-weight: 600; color: var(--primary);">
+                <label class="checkbox-label-row">
+                    <input type="checkbox" name="is_borrowed" id="is_borrowed" value="1" class="checkbox-icon">
+                    <span class="checkbox-label-text">
                         <i class="fas fa-exchange-alt"></i> This is a borrowed item (will be returned later)
                     </span>
                 </label>
-                <small style="color: var(--gray-500); font-size: 12px; margin-left: 28px;">
+                <small class="checkbox-hint">
                     Check this box if the item will be returned. This allows tracking of borrowed items.
                 </small>
             </div>
@@ -225,7 +297,7 @@ require_once 'includes/header.php';
                     placeholder="Additional notes or comments about this distribution"></textarea>
             </div>
             
-            <div style="display: flex; gap: 10px; margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--gray-200);">
+            <div class="form-actions">
                 <button type="submit" class="btn btn-primary">
                     <i class="fas fa-check"></i> Distribute Items
                 </button>
@@ -277,7 +349,7 @@ while ($item = $items->fetch_assoc()):
         if(!q) return esc(text);
         const i = text.toLowerCase().indexOf(q.toLowerCase());
         if(i === -1) return esc(text);
-        return esc(text.slice(0,i)) + '<mark style="background:#fef9c3;border-radius:2px;padding:0 1px;">' + esc(text.slice(i,i+q.length)) + '</mark>' + esc(text.slice(i+q.length));
+        return esc(text.slice(0,i)) + '<mark class="highlight-match">' + esc(text.slice(i,i+q.length)) + '</mark>' + esc(text.slice(i+q.length));
     }
 
     function openDropdown(q){
@@ -285,7 +357,7 @@ while ($item = $items->fetch_assoc()):
         activeIdx = -1;
         dropdown.innerHTML = '';
         if(filtered.length === 0){
-            dropdown.innerHTML = '<li style="padding:10px 14px;color:#9ca3af;font-size:13px;">No items found.</li>';
+            dropdown.innerHTML = '<li class="item-dropdown-empty">No items found.</li>';
         } else {
             filtered.forEach(function(it, i){
                 const li = document.createElement('li');

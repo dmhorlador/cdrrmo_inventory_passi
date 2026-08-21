@@ -83,21 +83,13 @@ while ($row = $transactions->fetch_assoc()) {
 require_once 'includes/header.php';
 ?>
 
-<style>
-@media print {
-    .no-print { display: none !important; }
-    body { background: white; }
-    .card { box-shadow: none; }
-}
-</style>
-
-<div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+<div class="no-print report-page-actions">
     <div>
         <a href="reports.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Reports
         </a>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="report-page-btns">
     <button onclick="printProfessionalReport('transactionsTable', 'TRANSACTION REPORT', 'Period: <?php echo date('M d, Y', strtotime($date_from)); ?> to <?php echo date('M d, Y', strtotime($date_to)); ?>')" class="btn btn-primary">
         <i class="fas fa-print"></i> Print Report
     </button>
@@ -108,13 +100,13 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Filters -->
-<div class="card no-print" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <h3 style="margin: 0 0 15px 0;">Filters</h3>
-        <form method="GET" style="display: flex; gap: 15px; flex-wrap: wrap; align-items: end;">
+<div class="card report-filter-card no-print">
+    <div class="report-filter-body">
+        <h3 class="report-filter-title">Filters</h3>
+        <form method="GET" class="report-filter-form-end">
             <div>
                 <label class="form-label">Transaction Type</label>
-                <select name="type" class="form-control" style="width: 180px;">
+                <select name="type" class="form-control report-select-md">
                     <option value="">All Types</option>
                     <option value="received" <?php echo $type_filter === 'received' ? 'selected' : ''; ?>>Received</option>
                     <option value="distributed" <?php echo $type_filter === 'distributed' ? 'selected' : ''; ?>>Distributed</option>
@@ -143,53 +135,53 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Report Header with Dual Logos -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 30px 40px; border-bottom: 3px solid var(--primary);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
-            <img src="images/logo.jpg" alt="CDRRMO Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gray-300);">
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 13px; color: var(--gray-600); margin-bottom: 2px;">Republic of the Philippines</div>
-                <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 4px;">Province of Iloilo</div>
-                <h1 style="margin: 0; color: var(--primary); font-size: 24px; font-weight: 800;">CITY OF PASSI</h1>
-                <h2 style="margin: 4px 0 0 0; color: var(--gray-700); font-size: 14px; font-weight: 600;">City Disaster Risk Reduction and Management Office</h2>
-                <div style="margin-top: 14px; padding-top: 10px; border-top: 2px solid var(--primary-100);">
-                    <h3 style="margin: 0; color: var(--gray-800); font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;">Transaction Report</h3>
-                    <p style="margin: 4px 0 0; color: var(--gray-500); font-size: 12px;">
+<div class="card report-header-card">
+    <div class="report-header-body">
+        <div class="report-header-center">
+            <img src="images/logo.jpg" alt="CDRRMO Logo" class="report-logo">
+            <div class="report-org-block">
+                <div class="report-republic">Republic of the Philippines</div>
+                <div class="report-province">Province of Iloilo</div>
+                <h1 class="report-city">CITY OF PASSI</h1>
+                <h2 class="report-office">City Disaster Risk Reduction and Management Office</h2>
+                <div class="report-title-block">
+                    <h3 class="report-doc-title">Transaction Report</h3>
+                    <p class="report-date-note">
                         Period: <?php echo date('M d, Y', strtotime($date_from)); ?> to <?php echo date('M d, Y', strtotime($date_to)); ?>
                     </p>
                     <p style="margin: 2px 0 0; color: var(--gray-500); font-size: 12px;">Generated: <?php echo date('F d, Y h:i A'); ?></p>
                 </div>
             </div>
-            <img src="images/logo1.png" alt="City Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: contain; border: 2px solid var(--gray-300);">
+            <img src="images/logo1.png" alt="City Logo" class="report-logo report-logo-contain">
         </div>
     </div>
 </div>
 
 <!-- Summary Statistics -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-            <div style="text-align: center; padding: 15px; background: var(--primary-50); border-radius: 6px;">
-                <div style="font-size: 12px; color: var(--primary); margin-bottom: 5px;">Total Transactions</div>
-                <div style="font-size: 24px; font-weight: 700; color: var(--primary);">
+<div class="card report-header-card">
+    <div class="report-filter-body">
+        <div class="report-summary-grid-4">
+            <div class="report-stat-blue">
+                <div class="report-stat-label-blue">Total Transactions</div>
+                <div class="report-stat-value-blue">
                     <?php echo number_format($totals['transactions']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #d1fae5; border-radius: 6px;">
-                <div style="font-size: 12px; color: #065f46; margin-bottom: 5px;">Items Received</div>
-                <div style="font-size: 24px; font-weight: 700; color: #065f46;">
+            <div class="report-stat-green">
+                <div class="report-stat-label-green">Items Received</div>
+                <div class="report-stat-value-green">
                     <?php echo number_format($totals['received']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #fef3c7; border-radius: 6px;">
-                <div style="font-size: 12px; color: #92400e; margin-bottom: 5px;">Items Distributed</div>
-                <div style="font-size: 24px; font-weight: 700; color: #92400e;">
+            <div class="report-stat-yellow">
+                <div class="report-stat-label-yellow">Items Distributed</div>
+                <div class="report-stat-value-yellow">
                     <?php echo number_format($totals['distributed']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #fee2e2; border-radius: 6px;">
-                <div style="font-size: 12px; color: #991b1b; margin-bottom: 5px;">Total Value</div>
-                <div style="font-size: 24px; font-weight: 700; color: #991b1b;">
+            <div class="report-stat-red">
+                <div class="report-stat-label-red">Total Value</div>
+                <div class="report-stat-value-red">
                     ₱<?php echo number_format($totals['value'], 2); ?>
                 </div>
             </div>
@@ -199,38 +191,38 @@ require_once 'includes/header.php';
 
 <!-- Transactions Table -->
 <div class="card">
-    <div style="padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;" id="transactionsTable">
+    <div class="report-filter-body">
+        <table class="report-data-table-sm" id="transactionsTable">
             <thead>
-                <tr style="background: var(--primary); color: white;">
-                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd; color: white;">Date</th>
-                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;color: white;">Transaction Code</th>
-                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;color: white;">Item Code</th>
-                    <th style="padding: 10px; text-align: left; border: 1px solid #ddd;color: white;">Description</th>
-                    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;color: white;">Type</th>
-                    <th style="padding: 10px; text-align: center; border: 1px solid #ddd;color: white;">Quantity</th>
-                    <th style="padding: 10px; text-align: right; border: 1px solid #ddd;color: white;">Unit Cost</th>
-                    <th style="padding: 10px; text-align: right; border: 1px solid #ddd;color: white;">Total</th>
-                    <!-- <th style="padding: 10px; text-align: left; border: 1px solid #ddd;color: white;">Supplier/Recipient</th> -->
+                <tr class="report-thead-row">
+                    <th class="report-th-sm report-th-sm-left">Date</th>
+                    <th class="report-th-sm report-th-sm-left">Transaction Code</th>
+                    <th class="report-th-sm report-th-sm-left">Item Code</th>
+                    <th class="report-th-sm report-th-sm-left">Description</th>
+                    <th class="report-th-sm report-th-sm-center">Type</th>
+                    <th class="report-th-sm report-th-sm-center">Quantity</th>
+                    <th class="report-th-sm report-th-sm-right">Unit Cost</th>
+                    <th class="report-th-sm report-th-sm-right">Total</th>
+                    <!-- <th class="report-th-sm report-th-sm-left">Supplier/Recipient</th> -->
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($trans_data as $trans): ?>
                     <tr>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><?php echo date('M d, Y', strtotime($trans['transaction_date'])); ?></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><strong><?php echo htmlspecialchars($trans['transaction_code']); ?></strong></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><?php echo htmlspecialchars($trans['item_code']); ?></td>
-                        <td style="padding: 8px; border: 1px solid #ddd;"><?php echo htmlspecialchars(substr($trans['item_description'], 0, 40)); ?></td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">
+                        <td class="report-td-sm"><?php echo date('M d, Y', strtotime($trans['transaction_date'])); ?></td>
+                        <td class="report-td-sm"><strong><?php echo htmlspecialchars($trans['transaction_code']); ?></strong></td>
+                        <td class="report-td-sm"><?php echo htmlspecialchars($trans['item_code']); ?></td>
+                        <td class="report-td-sm"><?php echo htmlspecialchars(substr($trans['item_description'], 0, 40)); ?></td>
+                        <td class="report-td-sm report-td-sm-center">
                             <?php echo ucfirst($trans['transaction_type']); ?>
                         </td>
-                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; font-weight: 600;">
+                        <td class="report-td-sm report-td-sm-center report-td-sm-bold">
                             <?php echo in_array($trans['transaction_type'], ['distributed']) ? '-' : '+'; ?>
                             <?php echo number_format($trans['quantity']); ?>
                         </td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">₱<?php echo number_format($trans['unit_cost'], 2); ?></td>
                         <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: 600;">₱<?php echo number_format($trans['total_cost'], 2); ?></td>
-                        <!-- <td style="padding: 8px; border: 1px solid #ddd;">
+                        <!-- <td class="report-td-sm">
                             <?php 
                             if ($trans['supplier_name']) {
                                 echo htmlspecialchars($trans['supplier_name']);
@@ -246,7 +238,7 @@ require_once 'includes/header.php';
                 
                 <?php if (empty($trans_data)): ?>
                     <tr>
-                        <td colspan="9" style="padding: 30px; text-align: center; color: var(--gray-500); border: 1px solid #ddd;">
+                        <td colspan="9" class="report-empty-cell">
                             No transactions found for the selected period
                         </td>
                     </tr>

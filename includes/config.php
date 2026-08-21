@@ -10,6 +10,9 @@ define('DB_NAME', 'cdrrmo_inventory');
 define('SITE_NAME', 'CDRRMO Inventory System');
 define('SITE_URL', 'http://localhost/cdrrmo_inventory_system');
 
+// Link used by the "Open Other System" option in the user menu (top-right dropdown)
+define('OTHER_SYSTEM_URL', 'https://example.com/replace-with-actual-link');
+
 // File Upload Configuration
 define('UPLOAD_DIR_ITEMS', __DIR__ . '/../uploads/items/');
 define('UPLOAD_DIR_DOCS', __DIR__ . '/../uploads/documents/');

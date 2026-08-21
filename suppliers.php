@@ -140,7 +140,7 @@ $suppliers = $conn->query("
 require_once 'includes/header.php';
 ?>
 <?php if ($is_admin):?>
-<div style="margin-bottom: 20px; margin-right: 5px; text-align: right;">
+<div class="supplier-actions">
     <button class="btn btn-success" onclick="showAddModal()">
         <i class="fas fa-plus"></i> Add Supplier
     </button>
@@ -187,7 +187,7 @@ require_once 'includes/header.php';
                             <td><?php echo htmlspecialchars($supplier['contact_person'] ?? '-'); ?></td>
                             <td>
                                 <?php if ($supplier['phone']): ?>
-                                    <a href="tel:<?php echo $supplier['phone']; ?>" style="color: var(--primary-light);">
+                                    <a href="tel:<?php echo $supplier['phone']; ?>" class="supplier-phone-link">
                                         <i class="fas fa-phone"></i> <?php echo htmlspecialchars($supplier['phone']); ?>
                                     </a>
                                 <?php else: ?>
@@ -196,7 +196,7 @@ require_once 'includes/header.php';
                             </td>
                             <td>
                                 <?php if ($supplier['email']): ?>
-                                    <a href="mailto:<?php echo $supplier['email']; ?>" style="color: var(--primary-light);">
+                                    <a href="mailto:<?php echo $supplier['email']; ?>" class="supplier-email-link">
                                         <i class="fas fa-envelope"></i> <?php echo htmlspecialchars($supplier['email']); ?>
                                     </a>
                                 <?php else: ?>
@@ -349,9 +349,9 @@ require_once 'includes/header.php';
 <!-- Delete Confirmation Modal -->
 <?php if ($is_admin): ?>
 <div class="modal" id="deleteModal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header" style="background: #fee2e2; border-bottom: 2px solid #dc2626;">
-            <h3 class="modal-title" style="color: #991b1b;">
+    <div class="modal-content modal-content-sm">
+        <div class="modal-header modal-header-warn">
+            <h3 class="modal-title modal-title-warn">
                 <i class="fas fa-exclamation-triangle"></i> Delete Supplier
             </h3>
             <button class="modal-close" onclick="hideDeleteModal()">&times;</button>
@@ -360,13 +360,13 @@ require_once 'includes/header.php';
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="supplier_id" id="delete_supplier_id">
             <div class="modal-body">
-                <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
-                    <p style="margin: 5px 0 0 0; color: #92400e;">This will deactivate the supplier. Existing transactions will be preserved.</p>
+                <div class="alert-box-yellow">
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
+                    <p class="alert-text-orange">This will deactivate the supplier. Existing transactions will be preserved.</p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
-                    Are you sure you want to delete supplier: <strong id="delete_supplier_name" style="color: #dc2626;"></strong>?
+                <p class="confirm-text">
+                    Are you sure you want to delete supplier: <strong class="confirm-name-warn"></strong>?
                 </p>
             </div>
             <div class="modal-footer">
@@ -398,11 +398,11 @@ require_once 'includes/header.php';
                 </div>
                 
                 <div id="permDeleteWarning" style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b; display: none;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
-                    <p style="margin: 5px 0 0 0; color: #92400e;" id="permDeleteWarningText"></p>
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
+                    <p class="alert-text-orange"></p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
+                <p class="confirm-text">
                     Permanently delete supplier: <strong id="perm_delete_supplier_name" style="color: #7f1d1d;"></strong>?
                 </p>
                 

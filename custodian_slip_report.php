@@ -101,100 +101,8 @@ $period_display = $day
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Inventory Custodian Slip</title>
+    <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        @page { size: A4 portrait; margin: 0.5in; }
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: Arial, sans-serif; font-size: 11pt; line-height: 1.3; color: #000; background: #fff; }
-        
-        .slip-container { width: 100%; max-width: 7.5in; margin: 0 auto; padding: 20px 0; }
-        
-        /* Filter Panel */
-        .filter-panel { background: #f5f5f5; padding: 20px; border-radius: 8px; margin-bottom: 20px; border: 1px solid #ddd; }
-        .filter-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-bottom: 15px; }
-        .filter-group { display: flex; flex-direction: column; }
-        .filter-label { font-size: 11px; font-weight: 600; margin-bottom: 5px; color: #333; }
-        .filter-control { padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; font-size: 11px; }
-        .filter-buttons { display: flex; gap: 10px; }
-        .btn { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 600; }
-        .btn-primary { background: #1e3a8a; color: white; }
-        .btn-primary:hover { background: #1e40af; }
-        .btn-secondary { background: #6b7280; color: white; }
-        
-        /* Header with Logos */
-        .slip-header { text-align: center; margin-bottom: 0; position: relative; }
-        .header-row { display: flex; align-items: center; justify-content: center; margin-bottom: 15px; gap: 10px; }
-.logo-left, .logo-right { 
-    width: 70px; 
-    height: 70px; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center;
-    border-radius: 50%;
-    color: #999;
-    font-size: 10px;
-    text-align: center;
-}
-.header-text { padding: 0 10px; text-align: center; }
-        .header-title { font-size: 14pt; font-weight: bold; margin-bottom: 3px; }
-        .header-subtitle { font-size: 12pt; margin-bottom: 2px; }
-        
-        /* Box around slip */
-        .slip-box { border: 2px solid #000; }
-        .slip-title { 
-            font-size: 14pt; 
-            font-weight: bold; 
-            padding: 10px 0; 
-            text-align: center;
-            border-bottom: 2px solid #000;
-        }
-        
-        /* Main Table */
-        .main-table { width: 100%; border-collapse: collapse; margin-bottom: 0; }
-        .main-table th, .main-table td { border: 1px solid #000; padding: 8px; vertical-align: top; }
-        .main-table th { background: #fff; font-weight: bold; text-align: center; font-size: 10pt; }
-        .main-table td { font-size: 10pt; }
-        
-        /* Column widths to match image */
-        .col-qty { width: 10%; text-align: center; }
-        .col-unit { width: 10%; text-align: center; }
-        .col-desc { width: 50%; }
-        .col-date { width: 15%; text-align: center; }
-        
-        .item-row { height: 80px; }
-        .item-row td { vertical-align: top; padding-top: 8px; }
-        
-        /* Signature Section */
-        .signature-section { display: flex; border-top: 0; }
-        .sig-left, .sig-right { flex: 1; padding: 20px; }
-        .sig-left { border-right: 1px solid #000; }
-        
-        .sig-box { margin-bottom: 20px; }
-        .sig-label { font-size: 9pt; margin-bottom: 5px; }
-        .sig-line { border-bottom: 1px solid #000; padding: 35px 5px 3px; margin-bottom: 3px; text-align: center; }
-        .sig-name { font-weight: bold; text-transform: uppercase; }
-        .sig-sublabel { font-size: 9pt; text-align: center; text-transform: uppercase; }
-        
-        .received-from-label { font-weight: bold; font-size: 11pt; margin-bottom: 15px; text-align: center; }
-        
-        /* Print Styles */
-        @media print {
-            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
-            .no-print { display: none !important; }
-            .slip-container { padding: 0; }
-            /* .filter-panel { display: none; } */
-            /* .logo-left, .logo-right {
-                border-style: solid;
-                border-color: #000;
-            } */
-        }
-        
-        .print-controls { position: fixed; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 10px; }
-        .btn-print { background: #1e3a8a; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-        .btn-print:hover { background: #1e40af; }
-        .btn-print.btn-secondary { background: #6b7280; }
-        .btn-print.btn-secondary:hover { background: #4b5563; }
-    </style>
 </head>
 <body>
     <div class="print-controls no-print">
@@ -209,7 +117,7 @@ $period_display = $day
     <div class="slip-container">
         <!-- Filter Panel -->
         <div class="filter-panel no-print">
-            <h3 style="margin-bottom: 15px; color: #1e3a8a; font-size: 14px;">
+            <h3 class="txn-card-title">
                 <i class="fas fa-filter"></i> Filter Options
             </h3>
             <form method="GET" action="">
@@ -269,7 +177,7 @@ $period_display = $day
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-search"></i> Apply Filters
                     </button>
-                    <a href="custodian_slip_report.php" class="btn btn-secondary" style="text-decoration: none; display: inline-flex; align-items: center;">
+                    <a href="custodian_slip_report.php" class="btn btn-secondary">
                         <i class="fas fa-redo"></i>&nbsp; Reset
                     </a>
                 </div>

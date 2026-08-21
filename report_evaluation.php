@@ -41,21 +41,13 @@ while ($row = $items->fetch_assoc()) {
 require_once 'includes/header.php';
 ?>
 
-<style>
-@media print {
-    .no-print { display: none !important; }
-    body { background: white; }
-    .card { box-shadow: none; }
-}
-</style>
-
-<div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+<div class="no-print report-page-actions">
     <div>
         <a href="reports.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Reports
         </a>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="report-page-btns">
     <button onclick="printProfessionalReport('valuationTable', 'INVENTORY VALUATION REPORT', '')" class="btn btn-primary">
         <i class="fas fa-print"></i> Print Report
     </button>
@@ -66,56 +58,56 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Report Header with Dual Logos -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 30px 40px; border-bottom: 3px solid var(--primary);">
-        <div style="display: flex; align-items: center; justify-content: center; gap: 24px;">
-            <img src="images/logo.jpg" alt="CDRRMO Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: cover; border: 2px solid var(--gray-300);">
-            <div style="text-align: center; flex: 1;">
-                <div style="font-size: 13px; color: var(--gray-600); margin-bottom: 2px;">Republic of the Philippines</div>
-                <div style="font-size: 12px; color: var(--gray-500); margin-bottom: 4px;">Province of Iloilo</div>
-                <h1 style="margin: 0; color: var(--primary); font-size: 24px; font-weight: 800;">CITY OF PASSI</h1>
-                <h2 style="margin: 4px 0 0 0; color: var(--gray-700); font-size: 14px; font-weight: 600;">City Disaster Risk Reduction and Management Office</h2>
-                <div style="margin-top: 14px; padding-top: 10px; border-top: 2px solid var(--primary-100);">
-                    <h3 style="margin: 0; color: var(--gray-800); font-size: 18px; font-weight: 700; text-transform: uppercase; letter-spacing: .5px;">Inventory Valuation Report</h3>
+<div class="card report-header-card">
+    <div class="report-header-body">
+        <div class="report-header-center">
+            <img src="images/logo.jpg" alt="CDRRMO Logo" class="report-logo">
+            <div class="report-org-block">
+                <div class="report-republic">Republic of the Philippines</div>
+                <div class="report-province">Province of Iloilo</div>
+                <h1 class="report-city">CITY OF PASSI</h1>
+                <h2 class="report-office">City Disaster Risk Reduction and Management Office</h2>
+                <div class="report-title-block">
+                    <h3 class="report-doc-title">Inventory Valuation Report</h3>
                     <p style="margin: 4px 0 0; color: var(--gray-500); font-size: 12px;">Generated: <?php echo date('F d, Y h:i A'); ?></p>
                 </div>
             </div>
-            <img src="images/logo1.png" alt="City Logo" style="width: 75px; height: 75px; border-radius: 50%; object-fit: contain; border: 2px solid var(--gray-300);">
+            <img src="images/logo1.png" alt="City Logo" class="report-logo report-logo-contain">
         </div>
     </div>
 </div>
 
 <!-- Summary Statistics -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-            <div style="text-align: center; padding: 20px; background: var(--primary-50); border-radius: 8px;">
-                <div style="font-size: 13px; color: var(--primary); margin-bottom: 8px;">Current Inventory Value</div>
-                <div style="font-size: 32px; font-weight: 700; color: var(--primary);">
+<div class="card report-header-card">
+    <div class="report-filter-body">
+        <div class="report-summary-grid-4">
+            <div class="report-stat-lg-blue">
+                <div class="report-stat-label-lg report-stat-label-blue">Current Inventory Value</div>
+                <div class="report-stat-value-lg report-stat-value-blue">
                     ₱<?php echo number_format($totals['current_value'], 2); ?>
                 </div>
-                <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">Based on current stock</div>
+                <div class="report-stat-note">Based on current stock</div>
             </div>
-            <div style="text-align: center; padding: 20px; background: #d1fae5; border-radius: 8px;">
-                <div style="font-size: 13px; color: #065f46; margin-bottom: 8px;">Total Received Value</div>
-                <div style="font-size: 32px; font-weight: 700; color: #065f46;">
+            <div class="report-stat-lg-green">
+                <div class="report-stat-label-lg report-stat-label-green">Total Received Value</div>
+                <div class="report-stat-value-lg report-stat-value-green">
                     ₱<?php echo number_format($totals['received_value'], 2); ?>
                 </div>
-                <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">All time</div>
+                <div class="report-stat-note">All time</div>
             </div>
-            <div style="text-align: center; padding: 20px; background: #fef3c7; border-radius: 8px;">
-                <div style="font-size: 13px; color: #92400e; margin-bottom: 8px;">Total Distributed Value</div>
-                <div style="font-size: 32px; font-weight: 700; color: #92400e;">
+            <div class="report-stat-lg-yellow">
+                <div class="report-stat-label-lg report-stat-label-yellow">Total Distributed Value</div>
+                <div class="report-stat-value-lg report-stat-value-yellow">
                     ₱<?php echo number_format($totals['distributed_value'], 2); ?>
                 </div>
-                <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">All time</div>
+                <div class="report-stat-note">All time</div>
             </div>
-            <div style="text-align: center; padding: 20px; background: #fee2e2; border-radius: 8px;">
-                <div style="font-size: 13px; color: #991b1b; margin-bottom: 8px;">Total Items</div>
-                <div style="font-size: 32px; font-weight: 700; color: #991b1b;">
+            <div class="report-stat-lg-red">
+                <div class="report-stat-label-lg report-stat-label-red">Total Items</div>
+                <div class="report-stat-value-lg report-stat-value-red">
                     <?php echo number_format($totals['items']); ?>
                 </div>
-                <div style="font-size: 12px; color: var(--gray-600); margin-top: 5px;">Active items</div>
+                <div class="report-stat-note">Active items</div>
             </div>
         </div>
     </div>
@@ -123,46 +115,46 @@ require_once 'includes/header.php';
 
 <!-- Valuation Table -->
 <div class="card">
-    <div style="padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse;" id="valuationTable">
+    <div class="report-filter-body">
+        <table class="report-data-table-auto" id="valuationTable">
             <thead>
-                <tr style="background: var(--primary); color: white;">
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; color: white;">Item Code</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;color: white;">Description</th>
-                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;color: white;">Category</th>
-                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;color: white;">On Hand</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;color: white;">Unit Cost</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;color: white;">Current Value</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;color: white;">% of Total</th>
+                <tr class="report-thead-row">
+                    <th class="report-th report-th-left">Item Code</th>
+                    <th class="report-th report-th-left">Description</th>
+                    <th class="report-th report-th-center">Category</th>
+                    <th class="report-th report-th-center">On Hand</th>
+                    <th class="report-th report-th-right">Unit Cost</th>
+                    <th class="report-th report-th-right">Current Value</th>
+                    <th class="report-th report-th-right">% of Total</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($items_data as $item): ?>
                     <?php $percentage = $totals['current_value'] > 0 ? ($item['current_value'] / $totals['current_value']) * 100 : 0; ?>
                     <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><strong><?php echo htmlspecialchars($item['item_code']); ?></strong></td>
-                        <td style="padding: 10px; border: 1px solid #ddd;"><?php echo htmlspecialchars($item['item_description']); ?></td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;"><?php echo htmlspecialchars($item['category_name']); ?></td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 600;">
+                        <td class="report-td"><strong><?php echo htmlspecialchars($item['item_code']); ?></strong></td>
+                        <td class="report-td"><?php echo htmlspecialchars($item['item_description']); ?></td>
+                        <td class="report-td report-td-center"><?php echo htmlspecialchars($item['category_name']); ?></td>
+                        <td class="report-td report-td-center report-td-bold">
                             <?php echo number_format($item['items_on_hand']); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">₱<?php echo number_format($item['unit_cost'], 2); ?></td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: var(--primary);">
+                        <td class="report-td report-td-right">₱<?php echo number_format($item['unit_cost'], 2); ?></td>
+                        <td class="report-td report-td-right report-td-bold report-value-primary">
                             ₱<?php echo number_format($item['current_value'], 2); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">
+                        <td class="report-td report-td-right">
                             <?php echo number_format($percentage, 2); ?>%
                         </td>
                     </tr>
                 <?php endforeach; ?>
                 
                 <!-- Totals Row -->
-                <tr style="background: var(--gray-100); font-weight: 700;">
-                    <td colspan="5" style="padding: 12px; border: 1px solid #ddd; text-align: right;">TOTALS:</td>
-                    <td style="padding: 12px; border: 1px solid #ddd; text-align: right; color: var(--primary);">
+                <tr class="report-totals-row">
+                    <td class="report-totals-value-right">TOTALS:</td>
+                    <td class="report-totals-value-right report-value-primary">
                         ₱<?php echo number_format($totals['current_value'], 2); ?>
                     </td>
-                    <td style="padding: 12px; border: 1px solid #ddd; text-align: right;">100.00%</td>
+                    <td class="report-totals-value-right">100.00%</td>
                 </tr>
             </tbody>
         </table>

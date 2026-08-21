@@ -14,16 +14,16 @@ if ($status_filter === 'critical') {
     // Critical: Out of stock only
     $where_conditions[] = "i.items_on_hand = 0";
 } elseif ($status_filter === 'low') {
-    // Low stock: Above 0 but at or below minimum
+    // Stock alert: Above 0 but at or below minimum
     $where_conditions[] = "i.items_on_hand > 0 AND i.items_on_hand <= i.minimum_stock_level";
 } else {
-    // All: Both critical and low stock
+    // All: Both critical and stock alert
     $where_conditions[] = "i.items_on_hand <= i.minimum_stock_level";
 }
 
 $where_clause = implode(' AND ', $where_conditions);
 
-// Get low stock items
+// Get stock alert items
 $low_stock = $conn->query("
     SELECT 
         i.*,
@@ -58,7 +58,7 @@ require_once 'includes/header.php';
 
 
 <!-- Alert Summary Cards -->
-<div class="dashboard-cards" style="margin-bottom: 30px;">
+<div class="dashboard-cards stock-alert-stats">
     <div class="card stat-card">
         <div class="stat-icon red">
             <i class="fas fa-exclamation-circle"></i>
@@ -84,14 +84,14 @@ require_once 'includes/header.php';
             <i class="fas fa-boxes"></i>
         </div>
         <div class="stat-info">
-            <div class="stat-label">Total Low Stock</div>
+            <div class="stat-label">Total Stock Alert</div>
             <div class="stat-value"><?php echo number_format($total_low_stock); ?></div>
         </div>
     </div>
 </div>
 
 <?php if ($total_low_stock > 0): ?>
-<div class="alert alert-warning" style="margin-bottom: 20px;">
+<div class="alert alert-warning">
     <i class="fas fa-exclamation-triangle"></i>
     <strong>Attention!</strong> You have <?php echo $total_low_stock; ?> item(s) that need to be restocked.
     <?php if ($out_of_stock > 0): ?>
@@ -101,16 +101,16 @@ require_once 'includes/header.php';
 <?php endif; ?>
 
 <!-- Filter Panel -->
-<div class="card no-print" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <h3 style="margin: 0 0 15px 0; color: var(--gray-800);"><i class="fas fa-filter"></i> Filter Stock Status</h3>
-        <form method="GET" style="display: flex; gap: 15px; align-items: end; flex-wrap: wrap;">
+<div class="card stock-filter-card no-print">
+    <div class="stock-filter-body">
+        <h3 class="stock-filter-title"><i class="fas fa-filter"></i> Filter Stock Status</h3>
+        <form method="GET" class="report-filter-form-end">
             <div>
-                <label class="form-label" style="display: block; margin-bottom: 5px; font-weight: 600;">Status</label>
+                <label class="form-label">Status</label>
                 <select name="status" class="form-control" style="width: 250px; padding: 8px 12px; border: 1px solid var(--gray-300); border-radius: 5px;">
-                    <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All (Critical & Low Stock)</option>
+                    <option value="all" <?php echo $status_filter === 'all' ? 'selected' : ''; ?>>All (Critical & Stock Alert)</option>
                     <option value="critical" <?php echo $status_filter === 'critical' ? 'selected' : ''; ?>>Critical Only (Out of Stock)</option>
-                    <option value="low" <?php echo $status_filter === 'low' ? 'selected' : ''; ?>>Low Stock Only</option>
+                    <option value="low" <?php echo $status_filter === 'low' ? 'selected' : ''; ?>>Stock Alert Only</option>
                 </select>
             </div>
             
@@ -119,7 +119,7 @@ require_once 'includes/header.php';
             </button>
             
             <?php if ($status_filter !== 'all'): ?>
-                <a href="low_stock.php" class="btn btn-secondary">
+                <a href="stock_alert.php" class="btn btn-secondary">
                     <i class="fas fa-times"></i> Clear Filter
                 </a>
             <?php endif; ?>
@@ -130,11 +130,11 @@ require_once 'includes/header.php';
 <div class="table-container">
     <div class="table-header">
         <h3 class="table-title">Stock Alert</h3>
-        <div style="display: flex; gap: 10px;">
-    <button onclick="printProfessionalReport('lowStockTable', 'LOW STOCK ALERT REPORT', '')" class="btn btn-primary">
+        <div class="flex gap-10">
+    <button onclick="printProfessionalReport('lowStockTable', 'STOCK ALERT ALERT REPORT', '')" class="btn btn-primary">
         <i class="fas fa-print"></i> Print Report
     </button>
-    <button onclick="exportReportToExcel('lowStockTable', 'LOW STOCK ALERT REPORT', 'Low_Stock_Report_<?php echo date('Y-m-d'); ?>.xlsx')" class="btn btn-success">
+    <button onclick="exportReportToExcel('lowStockTable', 'STOCK ALERT ALERT REPORT', 'Low_Stock_Report_<?php echo date('Y-m-d'); ?>.xlsx')" class="btn btn-success">
         <i class="fas fa-file-excel"></i> Export Excel
     </button>
 </div>
@@ -210,7 +210,7 @@ require_once 'includes/header.php';
                                 <?php if ($row['items_on_hand'] == 0): ?>
                                     <span class="badge badge-danger">Out of Stock</span>
                                 <?php else: ?>
-                                    <span class="badge badge-warning">Low Stock</span>
+                                    <span class="badge badge-warning">Stock Alert</span>
                                 <?php endif; ?>
                             </td>
                             <td>

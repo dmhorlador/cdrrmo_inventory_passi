@@ -1,6 +1,6 @@
 <?php
 require_once 'includes/config.php';
-check_admin(); // Only admins can delete
+check_login(); // Both admin and staff can delete
 
 if (!isset($_GET['id'])) {
     $_SESSION['error'] = "Invalid item ID";

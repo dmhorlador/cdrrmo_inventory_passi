@@ -6,9 +6,11 @@ $page_title = 'Inventory Items';
 
 // Check if current user is admin
 $is_admin = isset($_SESSION['user_role']) && $_SESSION['user_role'] === 'admin';
+// Both admin and staff can delete
+$can_delete = isset($_SESSION['user_id']);
 
 // Handle single item delete (soft delete)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $is_admin) {
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $can_delete) {
 
     if ($_POST['action'] === 'delete' && isset($_POST['item_id'])) {
         $item_id = (int)$_POST['item_id'];
@@ -142,9 +144,9 @@ require_once 'includes/header.php';
 </div>
 <?php endif; ?>
 
-<div style="margin-bottom: 20px; margin-right: 5px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px;">
-    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-        <form method="GET" style="display: flex; gap: 10px; flex-wrap: wrap;">
+<div class="inventory-toolbar">
+    <div class="inventory-filters">
+        <form method="GET" class="inventory-filter-form">
             <div class="search-bar">
                 <i class="fas fa-search search-icon"></i>
                 <input 
@@ -158,7 +160,7 @@ require_once 'includes/header.php';
                 >
             </div>
             
-            <select name="category" class="form-control" style="width: 200px;">
+            <select name="category" class="form-control inventory-cat-select">
                 <option value="">All Categories</option>
                 <?php while ($cat = $categories->fetch_assoc()): ?>
                     <option value="<?php echo $cat['id']; ?>" <?php echo $category_filter == $cat['id'] ? 'selected' : ''; ?>>
@@ -167,7 +169,7 @@ require_once 'includes/header.php';
                 <?php endwhile; ?>
             </select>
             
-            <select name="location" class="form-control" style="width: 200px;">
+            <select name="location" class="form-control inventory-cat-select">
                 <option value="">All Storage Locations</option>
                 <?php while ($loc = $storage_locations->fetch_assoc()): ?>
                     <option value="<?php echo $loc['id']; ?>" <?php echo $location_filter == $loc['id'] ? 'selected' : ''; ?>>
@@ -176,10 +178,10 @@ require_once 'includes/header.php';
                 <?php endwhile; ?>
             </select>
             
-            <select name="status" class="form-control" style="width: 150px;">
+            <select name="status" class="form-control" style="width:150px;">
                 <option value="">All Status</option>
                 <option value="in_stock" <?php echo $status_filter === 'in_stock' ? 'selected' : ''; ?>>In Stock</option>
-                <option value="low_stock" <?php echo $status_filter === 'low_stock' ? 'selected' : ''; ?>>Low Stock</option>
+                <option value="low_stock" <?php echo $status_filter === 'low_stock' ? 'selected' : ''; ?>>Stock Alert</option>
                 <option value="out_of_stock" <?php echo $status_filter === 'out_of_stock' ? 'selected' : ''; ?>>Out of Stock</option>
             </select>
             
@@ -195,8 +197,8 @@ require_once 'includes/header.php';
         </form>
     </div>
     
-    <div style="display: flex; gap: 10px; align-items: center;">
-        <?php if ($is_admin): ?>
+    <div class="flex gap-10 align-center">
+        <?php if ($can_delete): ?>
             <button id="bulkDeleteBtn" class="btn btn-danger" style="display: none;" onclick="confirmBulkDelete()">
                 <i class="fas fa-trash-alt"></i> Delete Selected (<span id="selectedCount">0</span>)
             </button>
@@ -208,19 +210,19 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Bulk delete form (hidden, submitted via JS) -->
-<?php if ($is_admin): ?>
+<!-- <?php if ($can_delete): ?> -->
 <form id="bulkDeleteForm" method="POST" action="inventory.php?<?php echo http_build_query(array_intersect_key($_GET, array_flip(['search','category','status','page']))); ?>">
     <input type="hidden" name="action" value="bulk_delete">
     <div id="bulkIdsContainer"></div>
 </form>
-<?php endif; ?>
+<!-- <?php endif; ?> -->
 
 <div class="table-container">
-    <div class="table-header" style="display: flex; justify-content: space-between; align-items: center;">
+    <div class="table-header">
         <h3 class="table-title">Inventory Items (<?php echo number_format($total); ?> total)</h3>
-        <?php if ($is_admin && $total > 0): ?>
-            <label style="font-size: 13px; color: #6b7280; cursor: pointer; user-select: none;">
-                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="margin-right: 6px;">
+        <?php if ($can_delete && $total > 0): ?>
+            <label class="user-checkbox-label" style="font-size:13px;color:#6b7280;">
+                <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="margin-right:6px;">
                 Select All on Page
             </label>
         <?php endif; ?>
@@ -229,7 +231,7 @@ require_once 'includes/header.php';
         <table>
             <thead>
                 <tr>
-                    <?php if ($is_admin): ?>
+                    <?php if ($can_delete): ?>
                         <th style="width: 36px;"></th>
                     <?php endif; ?>
                     <th>Item Code</th>
@@ -251,14 +253,14 @@ require_once 'includes/header.php';
                 <?php if ($items->num_rows > 0): ?>
                     <?php while ($row = $items->fetch_assoc()): ?>
                         <tr id="row-<?php echo $row['id']; ?>">
-                            <?php if ($is_admin): ?>
+                            <?php if ($can_delete): ?>
                                 <td>
                                     <input 
                                         type="checkbox" 
                                         class="row-checkbox" 
                                         value="<?php echo $row['id']; ?>" 
                                         onchange="updateBulkDeleteBtn()"
-                                        style="cursor: pointer;"
+                                        class="bulk-action-btn"
                                     >
                                 </td>
                             <?php endif; ?>
@@ -302,7 +304,7 @@ require_once 'includes/header.php';
                                         <?php echo date('M d, Y', $expiry); ?>
                                     <?php endif; ?>
                                 <?php else: ?>
-                                    <span style="color: var(--gray-400);">-</span>
+                                    <span class="text-muted">-</span>
                                 <?php endif; ?>
                             </td>
                             <td><?php echo number_format($row['minimum_stock_level']); ?></td>
@@ -312,13 +314,13 @@ require_once 'includes/header.php';
                                 <?php if ($row['items_on_hand'] <= 0): ?>
                                     <span class="badge badge-danger">Out of Stock</span>
                                 <?php elseif ($row['items_on_hand'] <= $row['minimum_stock_level']): ?>
-                                    <span class="badge badge-warning">Low Stock</span>
+                                    <span class="badge badge-warning">Stock Alert</span>
                                 <?php else: ?>
                                     <span class="badge badge-success">In Stock</span>
                                 <?php endif; ?>
                             </td>
                             <td>
-                                <div style="display: flex; gap: 8px; align-items: center;">
+                                <div class="flex gap-10 align-center">
                                     <a href="view_item.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary" title="View Details" style="padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px;">
                                         <i class="fas fa-eye"></i>
                                     </a>
@@ -326,20 +328,18 @@ require_once 'includes/header.php';
                                         <i class="fas fa-edit"></i>
                                     </a>
                                     
-                                    <?php if ($is_admin): ?>
-                                        <button onclick="confirmDelete(<?php echo $row['id']; ?>, '<?php echo htmlspecialchars($row['item_code'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars(substr($row['item_description'], 0, 50), ENT_QUOTES); ?>')" 
-                                            class="btn btn-sm btn-danger" title="Delete" 
-                                            style="padding: 6px 12px; display: inline-flex; align-items: center; justify-content: center; border-radius: 6px; border: none; cursor: pointer;">
+                                   
+                                        <button onclick="confirmDelete(<?php echo $row['id']; ?>, '<?php echo htmlspecialchars($row['item_code'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars(substr($row['item_description'], 0, 50), ENT_QUOTES); ?>')" class="btn btn-sm btn-danger" title="Delete">
                                             <i class="fas fa-trash"></i>
                                         </button>
-                                    <?php endif; ?>
+                               
                                 </div>
                             </td>
                         </tr>
                     <?php endwhile; ?>
                 <?php else: ?>
                     <tr>
-                        <td colspan="<?php echo $is_admin ? 11 : 10; ?>" class="text-center">No items found</td>
+                        <td colspan="<?php echo $can_delete ? 11 : 10; ?>" class="text-center">No items found</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -370,14 +370,14 @@ require_once 'includes/header.php';
     <?php endif; ?>
 </div>
 
-<?php if ($is_admin): ?>
+<?php if ($can_delete): ?>
 
 <!-- Single Delete Confirmation Modal -->
 <div id="deleteModal" style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center;">
     <!-- Backdrop -->
-    <div onclick="closeDeleteModal()" style="position:absolute; inset:0; background:rgba(0,0,0,0.45);"></div>
+    <div onclick="closeDeleteModal()" class="inline-modal-overlay"></div>
     <!-- Dialog -->
-    <div style="position:relative; background:#fff; border-radius:10px; padding:28px 28px 20px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div class="inline-modal-box">
         <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
             <div style="background:#fee2e2; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <i class="fas fa-trash" style="color:#dc2626; font-size:18px;"></i>
@@ -399,8 +399,8 @@ require_once 'includes/header.php';
 
 <!-- Bulk Delete Confirmation Modal -->
 <div id="bulkDeleteModal" style="display:none; position:fixed; inset:0; z-index:1000; align-items:center; justify-content:center;">
-    <div onclick="closeBulkDeleteModal()" style="position:absolute; inset:0; background:rgba(0,0,0,0.45);"></div>
-    <div style="position:relative; background:#fff; border-radius:10px; padding:28px 28px 20px; max-width:420px; width:90%; box-shadow:0 10px 40px rgba(0,0,0,0.2);">
+    <div onclick="closeBulkDeleteModal()" class="inline-modal-overlay"></div>
+    <div class="inline-modal-box">
         <div style="display:flex; align-items:center; gap:14px; margin-bottom:14px;">
             <div style="background:#fee2e2; border-radius:50%; width:44px; height:44px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
                 <i class="fas fa-trash-alt" style="color:#dc2626; font-size:18px;"></i>
@@ -433,7 +433,19 @@ function confirmDelete(id, code, description) {
     if (params.has('category')) deleteUrl += '&category=' + encodeURIComponent(params.get('category'));
     if (params.has('status')) deleteUrl += '&status=' + encodeURIComponent(params.get('status'));
     
-    document.getElementById('deleteConfirmBtn').href = deleteUrl;
+    const deleteBtn = document.getElementById('deleteConfirmBtn');
+    deleteBtn.href = deleteUrl;
+    
+    // Add loading indicator on click
+    deleteBtn.onclick = function(e) {
+        e.preventDefault();
+        showFormLoading('Deleting item...');
+        // Navigate after short delay to show loading
+        setTimeout(() => {
+            window.location.href = deleteUrl;
+        }, 100);
+    };
+    
     document.getElementById('deleteModal').style.display = 'flex';
 }
 function closeDeleteModal() {
@@ -481,6 +493,10 @@ function submitBulkDelete() {
         input.value = cb.value;
         container.appendChild(input);
     });
+    
+    // Show loading indicator before submitting bulk delete form
+    showFormLoading('Deleting items...');
+    
     document.getElementById('bulkDeleteForm').submit();
 }
 
@@ -518,7 +534,7 @@ document.addEventListener('keydown', function(e) {
                 curTbody.style.opacity = '0.5';
                 curTbody.innerHTML = newTbody.innerHTML;
                 curTbody.style.opacity = '1';
-                <?php if ($is_admin): ?>
+                <?php if ($can_delete): ?>
                 document.querySelectorAll('.row-checkbox').forEach(cb => {
                     cb.addEventListener('change', updateBulkDeleteBtn);
                 });
@@ -618,11 +634,15 @@ function refreshInventory() {
                     window.scrollTo(0, scrollY);
                     
                     // Reattach event listeners for checkboxes (if admin)
-                    <?php if ($is_admin): ?>
+                    <?php if ($can_delete): ?>
                     document.querySelectorAll('.row-checkbox').forEach(cb => {
                         cb.addEventListener('change', updateBulkDeleteBtn);
                     });
                     updateBulkDeleteBtn();
+                    
+                    // Reset modal state
+                    closeDeleteModal();
+                    closeBulkDeleteModal();
                     <?php endif; ?>
                 }, 150);
             }

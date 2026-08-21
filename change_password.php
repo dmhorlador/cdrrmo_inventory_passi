@@ -51,10 +51,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require_once 'includes/header.php';
 ?>
 
-<div style="max-width: 600px; margin: 0 auto;">
+<div class="change-pw-wrapper">
     <div class="card">
-        <div style="padding: 30px;">
-            <h2 style="margin-bottom: 20px; color: var(--primary);">
+        <div class="change-pw-body">
+            <h2 class="change-pw-title">
                 <i class="fas fa-key"></i> Change Password
             </h2>
             
@@ -96,7 +96,7 @@ require_once 'includes/header.php';
                         minlength="6"
                         placeholder="Enter new password (min. 6 characters)"
                     >
-                    <small style="color: var(--gray-500); font-size: 12px;">
+                    <small class="password-hint">
                         Password must be at least 6 characters long
                     </small>
                 </div>
@@ -114,7 +114,7 @@ require_once 'includes/header.php';
                     >
                 </div>
                 
-                <div style="display: flex; gap: 10px; margin-top: 30px;">
+                <div class="form-actions">
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-save"></i> Change Password
                     </button>

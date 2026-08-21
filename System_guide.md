@@ -8,7 +8,7 @@ Key Features:
     User management with role-based access
     Comprehensive reporting
     Activity logging & audit trail
-    Low stock alerts
+    Stock alert alerts
     Category-based organization
 
 USER ROLES
@@ -45,7 +45,7 @@ What's Logged:
 📊 REPORTS SYSTEM
 1. Inventory Summary Report
     Shows: Complete list of all items with stock and values
-    Filters: Category, Status (Low Stock, Out of Stock)
+    Filters: Category, Status (Stock Alert, Out of Stock)
     Use Case: Monthly inventory review
 2. Transaction Report
     Shows: All received and distributed items
@@ -59,7 +59,7 @@ What's Logged:
     Shows: Financial value of inventory
     Data: Current value, received value, distributed value
     Use Case: Budget planning, asset reporting
-5. Low Stock Report
+5. Stock Alert Report
     Shows: Items needing restock
     Auto-alerts: Items at or below minimum level
     Use Case: Procurement planning
@@ -100,10 +100,10 @@ Solution:
 
 
 Core Functionality
-Dashboard: Real-time statistics, recent transactions, low stock alerts, expiring items
+Dashboard: Real-time statistics, recent transactions, stock alert alerts, expiring items
 Inventory Management: Track all items with categories, stock levels, locations
 Transaction Tracking: Receive and distribute items with complete audit trail
-Low Stock Alerts: Automatic notifications with priority levels
+Stock Alert Alerts: Automatic notifications with priority levels
 User Management (Admin only): Create, edit, activate/deactivate users, change roles
 Category Management: Color-coded categories matching emergency services
 Supplier Management: Track suppliers and transaction history
@@ -111,10 +111,10 @@ Password Management: Secure password changes for all users
 
 
 ⚠️ ALERTS & NOTIFICATIONS
-Low Stock Alert
+Stock Alert Alert
 
     Triggered when: Items On Hand ≤ Minimum Stock Level
-    Shows on: Dashboard, Low Stock Report, Inventory List
+    Shows on: Dashboard, Stock Alert Report, Inventory List
     Color: Yellow badge
 
 Out of Stock Alert
@@ -245,7 +245,7 @@ activity_logs.php: A security and audit tool restricted to administrators. It re
 
 **Functionality & Features**
 - ✅ Real-time inventory tracking with accurate stock calculations
-- ✅ Automated low stock and out-of-stock alerts with priority levels
+- ✅ Automated stock alert and out-of-stock alerts with priority levels
 - ✅ Expiration date tracking with 30-day warning system
 - ✅ Multi-type transaction support (Receive, Distribute, Return)
 - ✅ 6+ comprehensive report types with filtering capabilities
@@ -330,7 +330,7 @@ activity_logs.php: A security and audit tool restricted to administrators. It re
 
 **Feature Enhancements**
 1. **Notification System**
-   - Implement email alerts for low stock/expiration warnings
+   - Implement email alerts for stock alert/expiration warnings
    - Add SMS notifications for critical events
    - Create in-app notification center
 

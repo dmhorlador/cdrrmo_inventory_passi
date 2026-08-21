@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <img src="images/logo.jpg" alt="CDRRMO Logo" class="login-logo">
                 <h1 class="login-title">CDRRMO Inventory System</h1>
                 <p class="login-subtitle">City Disaster Risk Reduction & Management Office</p>
-                <p class="login-subtitle" style="font-weight: 700; margin-top: 0px;">Passi City</p>
+                <p class="login-subtitle" class="login-subtitle-city">Passi City</p>
             </div>
             
             <?php if ($error): ?>

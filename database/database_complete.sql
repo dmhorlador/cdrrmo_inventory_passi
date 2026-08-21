@@ -1,10 +1,12 @@
 -- ============================================================================
 -- CDRRMO INVENTORY MANAGEMENT SYSTEM - COMPLETE DATABASE SCHEMA
+-- Includes: Item Status Workflow Migration + Batch Tracking Migration
 -- ============================================================================
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS cdrrmo_inventory CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cdrrmo_inventory;
+SET FOREIGN_KEY_CHECKS = 0;
 
 -- ============================================================================
 -- 1. USERS TABLE - For authentication and user management
@@ -53,7 +55,7 @@ DROP TABLE IF EXISTS categories;
 CREATE TABLE categories (
     id INT AUTO_INCREMENT PRIMARY KEY,
     category_name VARCHAR(50) NOT NULL UNIQUE,
-    category_code VARCHAR(10) UNIQUE COMMENT 'Short code for category (e.g., OFF, MED, SRR, FOOD)',
+    category_code VARCHAR(10) UNIQUE COMMENT 'Short code for category (e.g., OFC, MED, SRR, FOOD)',
     description TEXT,
     icon VARCHAR(50) COMMENT 'Icon identifier for UI',
     color VARCHAR(7) COMMENT 'Hex color code for category badge',
@@ -111,7 +113,7 @@ CREATE TABLE inventory_items (
     specifications TEXT COMMENT 'Technical specifications or details',
     unit VARCHAR(50) COMMENT 'Unit of measurement (pcs, boxes, bottles, kg, etc.)',
     unit_cost DECIMAL(10,2) DEFAULT 0.00 COMMENT 'Cost per unit',
-    
+
     -- Stock tracking
     items_received INT DEFAULT 0 COMMENT 'Total items received (cumulative)',
     items_distributed INT DEFAULT 0 COMMENT 'Total items distributed (cumulative)',
@@ -119,38 +121,46 @@ CREATE TABLE inventory_items (
     minimum_stock_level INT DEFAULT 5 COMMENT 'Alert when stock falls below this',
     maximum_stock_level INT DEFAULT NULL COMMENT 'Maximum stock capacity',
     reorder_point INT DEFAULT 10 COMMENT 'Trigger reorder when stock reaches this level',
-    
+
     -- Additional tracking
     storage_location_id INT NULL,
     expiration_date DATE NULL COMMENT 'For perishable items',
     batch_number VARCHAR(50),
     serial_number VARCHAR(50),
-    
+
     -- Status and metadata
     condition_status ENUM('new', 'good', 'fair', 'poor', 'damaged') DEFAULT 'new',
+    item_status ENUM(
+        'Available',
+        'In-Use',
+        'Pending Repair',
+        'Serviceable',
+        'Unserviceable'
+    ) DEFAULT 'Available' COMMENT 'Current status of the item: Available, In-Use, Pending Repair, Serviceable, Unserviceable',
     is_active TINYINT(1) DEFAULT 1,
     notes TEXT,
-    
+
     -- Image/Document
     image_path VARCHAR(255),
     document_path VARCHAR(255),
-    
+
     -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     created_by INT,
     updated_by INT,
-    
+
     FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE RESTRICT,
     FOREIGN KEY (storage_location_id) REFERENCES storage_locations(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
-    
+
     INDEX idx_item_code (item_code),
     INDEX idx_category_id (category_id),
     INDEX idx_items_on_hand (items_on_hand),
     INDEX idx_expiration_date (expiration_date),
     INDEX idx_is_active (is_active),
+    INDEX idx_item_status (item_status),
     FULLTEXT idx_item_description (item_description)
 ) ENGINE=InnoDB COMMENT='Main inventory items table';
 
@@ -163,48 +173,49 @@ CREATE TABLE transactions (
     transaction_code VARCHAR(50) UNIQUE COMMENT 'Unique transaction reference number',
     item_id INT NOT NULL,
     transaction_type ENUM('received', 'distributed', 'returned', 'adjustment', 'return', 'damaged', 'expired') NOT NULL,
-    
+
     -- Quantity tracking
     quantity INT NOT NULL COMMENT 'Positive for additions, negative for deductions',
     unit_cost DECIMAL(10,2) DEFAULT 0.00,
     total_cost DECIMAL(10,2) AS (quantity * unit_cost) STORED,
-    
+
     -- Transaction details
     transaction_date DATE NOT NULL,
     supplier_id INT NULL COMMENT 'For received items',
     recipient_name VARCHAR(100) COMMENT 'For distributed items',
     recipient_organization VARCHAR(100),
     purpose TEXT COMMENT 'Purpose of distribution or reason for adjustment',
-    
+
     -- Reference documents
     reference_number VARCHAR(50) COMMENT 'PO number, DR number, etc.',
     document_path VARCHAR(255),
-    
+
     -- Batch/Serial tracking
     batch_number VARCHAR(50),
     serial_number VARCHAR(50),
     expiration_date DATE,
-    
+
     -- Additional info
     notes TEXT,
     approved_by INT COMMENT 'User who approved the transaction',
     approved_at DATETIME,
-    
+
     -- Borrow/Return functionality
     is_borrowed TINYINT(1) DEFAULT 0 COMMENT 'Is this a borrowed item (1=yes, 0=no)',
     parent_transaction_id INT NULL COMMENT 'References original transaction for returns',
     return_condition VARCHAR(50) NULL COMMENT 'Condition of returned items (Good/Fair/Damaged)',
-    
+    status_change_id INT NULL COMMENT 'References the status history record',
+
     -- Audit fields
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     created_by INT,
-    
+
     FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
     FOREIGN KEY (supplier_id) REFERENCES suppliers(id) ON DELETE SET NULL,
     FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (approved_by) REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (parent_transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
-    
+
     INDEX idx_transaction_code (transaction_code),
     INDEX idx_item_id (item_id),
     INDEX idx_transaction_type (transaction_type),
@@ -215,7 +226,50 @@ CREATE TABLE transactions (
 ) ENGINE=InnoDB COMMENT='All inventory transactions and movements';
 
 -- ============================================================================
--- 8. STOCK ALERTS TABLE - Automated stock alerts
+-- 8. ITEM STATUS HISTORY TABLE - Audit trail for item status changes
+-- ============================================================================
+DROP TABLE IF EXISTS item_status_history;
+CREATE TABLE item_status_history (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    transaction_id INT NULL COMMENT 'Reference to the transaction that caused the status change',
+    previous_status ENUM(
+        'Available',
+        'In-Use',
+        'Pending Repair',
+        'Serviceable',
+        'Unserviceable'
+    ) COMMENT 'Status before the change',
+    new_status ENUM(
+        'Available',
+        'In-Use',
+        'Pending Repair',
+        'Serviceable',
+        'Unserviceable'
+    ) NOT NULL COMMENT 'Status after the change',
+    status_reason VARCHAR(255) COMMENT 'Reason for status change',
+    notes TEXT COMMENT 'Additional notes about the status change',
+    return_condition VARCHAR(50) COMMENT 'Condition upon return (Good/Fair/Damaged)',
+    assessment_notes TEXT COMMENT 'Maintenance team assessment notes',
+    created_by INT NOT NULL COMMENT 'User who made the status change',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+    FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
+    FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE RESTRICT,
+
+    INDEX idx_item_id (item_id),
+    INDEX idx_new_status (new_status),
+    INDEX idx_created_at (created_at)
+) ENGINE=InnoDB COMMENT='Audit trail for item status changes';
+
+-- Add FK from transactions to item_status_history (after both tables exist)
+ALTER TABLE transactions
+    ADD CONSTRAINT fk_transactions_status_change
+    FOREIGN KEY (status_change_id) REFERENCES item_status_history(id) ON DELETE SET NULL;
+
+-- ============================================================================
+-- 9. STOCK ALERTS TABLE - Automated stock alerts
 -- ============================================================================
 DROP TABLE IF EXISTS stock_alerts;
 CREATE TABLE stock_alerts (
@@ -227,17 +281,17 @@ CREATE TABLE stock_alerts (
     acknowledged_by INT NULL,
     acknowledged_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
     FOREIGN KEY (acknowledged_by) REFERENCES users(id) ON DELETE SET NULL,
-    
+
     INDEX idx_item_id (item_id),
     INDEX idx_alert_type (alert_type),
     INDEX idx_is_acknowledged (is_acknowledged)
 ) ENGINE=InnoDB COMMENT='Stock alerts and notifications';
 
 -- ============================================================================
--- 9. AUDIT LOG TABLE - Track all system changes
+-- 10. AUDIT LOG TABLE - Track all system changes
 -- ============================================================================
 DROP TABLE IF EXISTS audit_log;
 CREATE TABLE audit_log (
@@ -251,9 +305,9 @@ CREATE TABLE audit_log (
     ip_address VARCHAR(45),
     user_agent TEXT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
-    
+
     INDEX idx_user_id (user_id),
     INDEX idx_action (action),
     INDEX idx_table_name (table_name),
@@ -261,7 +315,7 @@ CREATE TABLE audit_log (
 ) ENGINE=InnoDB COMMENT='Audit trail for all system actions';
 
 -- ============================================================================
--- 10. SYSTEM SETTINGS TABLE - Application configuration
+-- 11. SYSTEM SETTINGS TABLE - Application configuration
 -- ============================================================================
 DROP TABLE IF EXISTS system_settings;
 CREATE TABLE system_settings (
@@ -273,13 +327,13 @@ CREATE TABLE system_settings (
     is_editable TINYINT(1) DEFAULT 1,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     updated_by INT,
-    
+
     FOREIGN KEY (updated_by) REFERENCES users(id) ON DELETE SET NULL,
     INDEX idx_setting_key (setting_key)
 ) ENGINE=InnoDB COMMENT='System configuration settings';
 
 -- ============================================================================
--- 11. USER FEEDBACK TABLE - User feedback and support tickets
+-- 12. USER FEEDBACK TABLE - User feedback and support tickets
 -- ============================================================================
 DROP TABLE IF EXISTS user_feedback;
 CREATE TABLE user_feedback (
@@ -295,10 +349,10 @@ CREATE TABLE user_feedback (
     responded_at DATETIME NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    
+
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
     FOREIGN KEY (responded_by) REFERENCES users(id) ON DELETE SET NULL,
-    
+
     INDEX idx_user_id (user_id),
     INDEX idx_status (status),
     INDEX idx_feedback_type (feedback_type),
@@ -306,12 +360,50 @@ CREATE TABLE user_feedback (
 ) ENGINE=InnoDB COMMENT='User feedback and support tickets';
 
 -- ============================================================================
+-- 13. ITEM BATCHES TABLE - Batch-Based Expiration & Distribution Tracking
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS item_batches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    item_id INT NOT NULL,
+    transaction_id INT NULL COMMENT 'Links to the transactions table entry',
+    batch_number VARCHAR(50),
+    ris_no VARCHAR(50) COMMENT 'Reference/RIS number from receive transaction',
+    quantity_received INT NOT NULL DEFAULT 0,
+    quantity_on_hand INT NOT NULL DEFAULT 0 COMMENT 'Remaining after distributions',
+    unit_cost DECIMAL(10,2) DEFAULT 0.00,
+    expiration_date DATE NULL,
+    received_date DATE NOT NULL,
+    notes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+    INDEX idx_item_batches_item_id (item_id),
+    INDEX idx_item_batches_expiration (expiration_date),
+    INDEX idx_item_batches_qty (quantity_on_hand)
+) ENGINE=InnoDB COMMENT='Stores individual receive batches for FIFO expiration tracking';
+
+-- ============================================================================
+-- 14. DISTRIBUTION BATCHES TABLE - Tracks which batches used per distribution
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS distribution_batches (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    transaction_id INT NOT NULL COMMENT 'The distribution transaction',
+    batch_id INT NOT NULL COMMENT 'The item_batch used',
+    quantity_taken INT NOT NULL DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE CASCADE,
+    FOREIGN KEY (batch_id) REFERENCES item_batches(id) ON DELETE CASCADE,
+    INDEX idx_dist_batches_txn (transaction_id),
+    INDEX idx_dist_batches_batch (batch_id)
+) ENGINE=InnoDB COMMENT='Records which batches were consumed in each distribution (FIFO)';
+
+-- ============================================================================
 -- INSERT DEFAULT DATA
 -- ============================================================================
 
 -- Insert default categories
 INSERT INTO categories (category_name, category_code, description, icon, color, display_order) VALUES
-('OFFICE', 'OFF', 'Office Supplies and Equipment', '📄', '#3498db', 1),
+('OFFICE', 'OFC', 'Office Supplies and Equipment', '📄', '#3498db', 1),
 ('MEDICAL', 'MED', 'Medical Supplies and Equipment', '🏥', '#e74c3c', 2),
 ('SRR', 'SRR', 'Search, Rescue and Relief Equipment', '🚨', '#f39c12', 3),
 ('FOOD', 'FOOD', 'Food and Beverage Supplies', '🍱', '#2ecc71', 4);
@@ -345,20 +437,20 @@ INSERT INTO system_settings (setting_key, setting_value, setting_type, descripti
 ('require_approval', 'false', 'boolean', 'Require approval for transactions', 1);
 
 -- ============================================================================
--- INSERT SAMPLE INVENTORY DATA (Based on your Excel file)
+-- INSERT SAMPLE INVENTORY DATA
 -- ============================================================================
 
 -- OFFICE SUPPLIES
 INSERT INTO inventory_items (item_code, category_id, item_description, unit, items_received, items_distributed, items_on_hand, minimum_stock_level, storage_location_id, created_by) VALUES
-('OFF-001', 1, 'Book paper 70 GSM 8.5 inch x 13 inch, sub', 'reams', 50, 30, 20, 10, 1, 1),
-('OFF-002', 1, 'Book paper 70 GSM A4 8.3 inches x 11.7 inch sub 20', 'reams', 50, 30, 20, 10, 1, 1),
-('OFF-003', 1, 'Book paper 70 GSM A4 8.5 inches x 11 inch sub 20', 'reams', 45, 30, 15, 10, 1, 1),
-('OFF-004', 1, 'Printer Ink Bottle Refill 003 "Black" 65ml', 'bottles', 15, 15, 0, 5, 1, 1),
-('OFF-005', 1, 'Printer Ink Bottle Refill 003 "Cyan" 65ml', 'bottles', 6, 6, 0, 5, 1, 1),
-('OFF-006', 1, 'Printer Ink Bottle Refill 003 "Yellow" 65ml', 'bottles', 6, 6, 0, 5, 1, 1),
-('OFF-007', 1, 'Printer Ink Bottle Refill T664 "Black" 70ml', 'bottles', 5, 5, 0, 5, 1, 1),
-('OFF-008', 1, 'Printer Ink Bottle Refill T664 "Cyan" 70ml', 'bottles', 3, 3, 0, 5, 1, 1),
-('OFF-009', 1, 'Printer Ink Bottle Refill T664 "Yellow" 70ml', 'bottles', 3, 3, 0, 5, 1, 1);
+('OFC-001', 1, 'Book paper 70 GSM 8.5 inch x 13 inch, sub', 'reams', 50, 30, 20, 10, 1, 1),
+('OFC-002', 1, 'Book paper 70 GSM A4 8.3 inches x 11.7 inch sub 20', 'reams', 50, 30, 20, 10, 1, 1),
+('OFC-003', 1, 'Book paper 70 GSM A4 8.5 inches x 11 inch sub 20', 'reams', 45, 30, 15, 10, 1, 1),
+('OFC-004', 1, 'Printer Ink Bottle Refill 003 "Black" 65ml', 'bottles', 15, 15, 0, 5, 1, 1),
+('OFC-005', 1, 'Printer Ink Bottle Refill 003 "Cyan" 65ml', 'bottles', 6, 6, 0, 5, 1, 1),
+('OFC-006', 1, 'Printer Ink Bottle Refill 003 "Yellow" 65ml', 'bottles', 6, 6, 0, 5, 1, 1),
+('OFC-007', 1, 'Printer Ink Bottle Refill T664 "Black" 70ml', 'bottles', 5, 5, 0, 5, 1, 1),
+('OFC-008', 1, 'Printer Ink Bottle Refill T664 "Cyan" 70ml', 'bottles', 3, 3, 0, 5, 1, 1),
+('OFC-009', 1, 'Printer Ink Bottle Refill T664 "Yellow" 70ml', 'bottles', 3, 3, 0, 5, 1, 1);
 
 -- MEDICAL SUPPLIES
 INSERT INTO inventory_items (item_code, category_id, item_description, unit, items_received, items_distributed, items_on_hand, minimum_stock_level, storage_location_id, created_by) VALUES
@@ -421,7 +513,7 @@ INSERT INTO transactions (transaction_code, item_id, transaction_type, quantity,
 
 -- View: Current inventory status with category info
 CREATE OR REPLACE VIEW v_inventory_status AS
-SELECT 
+SELECT
     i.id,
     i.item_code,
     c.category_name,
@@ -437,9 +529,10 @@ SELECT
     i.expiration_date,
     DATEDIFF(i.expiration_date, CURDATE()) AS days_until_expiry,
     sl.location_name,
-    CASE 
+    i.item_status,
+    CASE
         WHEN i.items_on_hand = 0 THEN 'Out of Stock'
-        WHEN i.items_on_hand <= i.minimum_stock_level THEN 'Low Stock'
+        WHEN i.items_on_hand <= i.minimum_stock_level THEN 'Stock Alert'
         WHEN i.expiration_date IS NOT NULL AND DATEDIFF(i.expiration_date, CURDATE()) <= 30 THEN 'Expiring Soon'
         ELSE 'Normal'
     END AS stock_status,
@@ -450,7 +543,7 @@ LEFT JOIN storage_locations sl ON i.storage_location_id = sl.id;
 
 -- View: Transaction summary
 CREATE OR REPLACE VIEW v_transaction_summary AS
-SELECT 
+SELECT
     t.id,
     t.transaction_code,
     t.transaction_type,
@@ -472,9 +565,9 @@ JOIN categories c ON i.category_id = c.id
 LEFT JOIN suppliers s ON t.supplier_id = s.id
 LEFT JOIN users u ON t.created_by = u.id;
 
--- View: Low stock alerts
+-- View: Stock alert items
 CREATE OR REPLACE VIEW v_low_stock_items AS
-SELECT 
+SELECT
     i.id,
     i.item_code,
     c.category_name,
@@ -490,7 +583,7 @@ ORDER BY i.items_on_hand ASC;
 
 -- View: Expiring items
 CREATE OR REPLACE VIEW v_expiring_items AS
-SELECT 
+SELECT
     i.id,
     i.item_code,
     c.category_name,
@@ -506,12 +599,61 @@ AND DATEDIFF(i.expiration_date, CURDATE()) <= 30
 AND i.is_active = 1
 ORDER BY i.expiration_date ASC;
 
+-- View: Borrowed items with return status
+CREATE OR REPLACE VIEW v_borrowed_items AS
+SELECT
+    t.id,
+    t.transaction_code,
+    t.transaction_date,
+    t.item_id,
+    i.item_code,
+    i.item_description,
+    i.unit,
+    i.item_status,
+    t.quantity AS borrowed_quantity,
+    t.recipient_name,
+    t.recipient_organization,
+    t.purpose,
+    COALESCE(
+        (SELECT SUM(quantity)
+         FROM transactions
+         WHERE parent_transaction_id = t.id
+         AND transaction_type = 'returned'),
+        0
+    ) AS returned_quantity,
+    (t.quantity - COALESCE(
+        (SELECT SUM(quantity)
+         FROM transactions
+         WHERE parent_transaction_id = t.id
+         AND transaction_type = 'returned'),
+        0
+    )) AS remaining_quantity,
+    CASE
+        WHEN (t.quantity - COALESCE(
+            (SELECT SUM(quantity)
+             FROM transactions
+             WHERE parent_transaction_id = t.id
+             AND transaction_type = 'returned'),
+            0
+        )) = 0 THEN 'Fully Returned'
+        WHEN (SELECT SUM(quantity)
+              FROM transactions
+              WHERE parent_transaction_id = t.id
+              AND transaction_type = 'returned') > 0 THEN 'Partially Returned'
+        ELSE 'Not Returned'
+    END AS return_status
+FROM transactions t
+JOIN inventory_items i ON t.item_id = i.id
+WHERE t.transaction_type = 'distributed'
+AND t.is_borrowed = 1;
+
 -- ============================================================================
 -- CREATE TRIGGERS FOR AUTOMATION
 -- ============================================================================
 
--- Trigger: Auto-generate stock alerts for low stock
 DELIMITER $$
+
+-- Trigger: Auto-generate stock alerts after transaction
 CREATE TRIGGER tr_check_low_stock_after_transaction
 AFTER INSERT ON transactions
 FOR EACH ROW
@@ -519,12 +661,12 @@ BEGIN
     DECLARE current_stock INT;
     DECLARE min_stock INT;
     DECLARE item_desc TEXT;
-    
+
     SELECT items_on_hand, minimum_stock_level, item_description
     INTO current_stock, min_stock, item_desc
     FROM inventory_items
     WHERE id = NEW.item_id;
-    
+
     IF current_stock = 0 THEN
         INSERT INTO stock_alerts (item_id, alert_type, alert_message)
         VALUES (NEW.item_id, 'out_of_stock', CONCAT('Item "', item_desc, '" is out of stock'));
@@ -534,16 +676,16 @@ BEGIN
     END IF;
 END$$
 
--- Trigger: Check expiring items
+-- Trigger: Check expiring items after update
 CREATE TRIGGER tr_check_expiring_items_after_update
 AFTER UPDATE ON inventory_items
 FOR EACH ROW
 BEGIN
     DECLARE days_left INT;
-    
+
     IF NEW.expiration_date IS NOT NULL THEN
         SET days_left = DATEDIFF(NEW.expiration_date, CURDATE());
-        
+
         IF days_left <= 0 THEN
             INSERT INTO stock_alerts (item_id, alert_type, alert_message)
             VALUES (NEW.id, 'expired', CONCAT('Item "', NEW.item_description, '" has expired'));
@@ -560,8 +702,9 @@ DELIMITER ;
 -- STORED PROCEDURES
 -- ============================================================================
 
--- Procedure: Generate item code
 DELIMITER $$
+
+-- Procedure: Generate item code
 CREATE PROCEDURE sp_generate_item_code(
     IN p_category_id INT,
     OUT p_item_code VARCHAR(50)
@@ -569,17 +712,14 @@ CREATE PROCEDURE sp_generate_item_code(
 BEGIN
     DECLARE cat_code VARCHAR(10);
     DECLARE next_num INT;
-    
-    -- Get category code
+
     SELECT category_code INTO cat_code FROM categories WHERE id = p_category_id;
-    
-    -- Get next number
+
     SELECT COALESCE(MAX(CAST(SUBSTRING(item_code, LENGTH(cat_code) + 2) AS UNSIGNED)), 0) + 1
     INTO next_num
     FROM inventory_items
     WHERE category_id = p_category_id;
-    
-    -- Generate code
+
     SET p_item_code = CONCAT(cat_code, '-', LPAD(next_num, 3, '0'));
 END$$
 
@@ -596,11 +736,9 @@ CREATE PROCEDURE sp_record_transaction(
 BEGIN
     DECLARE trans_code VARCHAR(50);
     DECLARE qty_adjustment INT;
-    
-    -- Start transaction
+
     START TRANSACTION;
-    
-    -- Generate transaction code
+
     SET trans_code = CONCAT(
         UPPER(LEFT(p_transaction_type, 3)),
         '-',
@@ -608,82 +746,68 @@ BEGIN
         '-',
         LPAD((SELECT COUNT(*) + 1 FROM transactions WHERE YEAR(transaction_date) = YEAR(p_transaction_date)), 4, '0')
     );
-    
-    -- Determine quantity adjustment
+
     IF p_transaction_type IN ('received', 'return') THEN
         SET qty_adjustment = p_quantity;
     ELSE
         SET qty_adjustment = -p_quantity;
     END IF;
-    
-    -- Insert transaction
+
     INSERT INTO transactions (transaction_code, item_id, transaction_type, quantity, transaction_date, notes, created_by)
     VALUES (trans_code, p_item_id, p_transaction_type, p_quantity, p_transaction_date, p_notes, p_user_id);
-    
+
     SET p_transaction_id = LAST_INSERT_ID();
-    
-    -- Update inventory
+
     UPDATE inventory_items
-    SET 
+    SET
         items_received = items_received + IF(p_transaction_type = 'received', p_quantity, 0),
         items_distributed = items_distributed + IF(p_transaction_type = 'distributed', p_quantity, 0),
         items_on_hand = items_on_hand + qty_adjustment,
         updated_by = p_user_id
     WHERE id = p_item_id;
-    
+
     COMMIT;
 END$$
 
-DELIMITER ;
+-- Procedure: Log item status change
+CREATE PROCEDURE log_item_status_change(
+    IN p_item_id INT,
+    IN p_transaction_id INT,
+    IN p_previous_status VARCHAR(50),
+    IN p_new_status VARCHAR(50),
+    IN p_reason VARCHAR(255),
+    IN p_notes TEXT,
+    IN p_return_condition VARCHAR(50),
+    IN p_assessment_notes TEXT,
+    IN p_created_by INT
+)
+BEGIN
+    INSERT INTO item_status_history (
+        item_id,
+        transaction_id,
+        previous_status,
+        new_status,
+        status_reason,
+        notes,
+        return_condition,
+        assessment_notes,
+        created_by
+    ) VALUES (
+        p_item_id,
+        p_transaction_id,
+        p_previous_status,
+        p_new_status,
+        p_reason,
+        p_notes,
+        p_return_condition,
+        p_assessment_notes,
+        p_created_by
+    );
 
--- ============================================================================
--- VIEW: v_borrowed_items - Track borrowed items with return status
--- ============================================================================
-CREATE OR REPLACE VIEW v_borrowed_items AS
-SELECT 
-    t.id,
-    t.transaction_code,
-    t.transaction_date,
-    t.item_id,
-    i.item_code,
-    i.item_description,
-    i.unit,
-    t.quantity as borrowed_quantity,
-    t.recipient_name,
-    t.recipient_organization,
-    t.purpose,
-    COALESCE(
-        (SELECT SUM(quantity) 
-         FROM transactions 
-         WHERE parent_transaction_id = t.id 
-         AND transaction_type = 'returned'),
-        0
-    ) as returned_quantity,
-    (t.quantity - COALESCE(
-        (SELECT SUM(quantity) 
-         FROM transactions 
-         WHERE parent_transaction_id = t.id 
-         AND transaction_type = 'returned'),
-        0
-    )) as remaining_quantity,
-    CASE 
-        WHEN (t.quantity - COALESCE(
-            (SELECT SUM(quantity) 
-             FROM transactions 
-             WHERE parent_transaction_id = t.id 
-             AND transaction_type = 'returned'),
-            0
-        )) = 0 THEN 'Fully Returned'
-        WHEN (SELECT SUM(quantity) 
-              FROM transactions 
-              WHERE parent_transaction_id = t.id 
-              AND transaction_type = 'returned') > 0 THEN 'Partially Returned'
-        ELSE 'Not Returned'
-    END as return_status
-FROM transactions t
-JOIN inventory_items i ON t.item_id = i.id
-WHERE t.transaction_type = 'distributed'
-AND t.is_borrowed = 1;
+    UPDATE inventory_items SET item_status = p_new_status WHERE id = p_item_id;
+END$$
+
+DELIMITER ;
 
 -- ============================================================================
 -- GRANT PERMISSIONS (Adjust based on your setup)
@@ -692,12 +816,26 @@ AND t.is_borrowed = 1;
 -- FLUSH PRIVILEGES;
 
 -- ============================================================================
--- END OF DATABASE SETUP
+-- VERIFICATION
 -- ============================================================================
-
 SELECT 'Database setup completed successfully!' AS Status;
 SELECT COUNT(*) AS total_users FROM users;
 SELECT COUNT(*) AS total_categories FROM categories;
 SELECT COUNT(*) AS total_items FROM inventory_items;
 SELECT COUNT(*) AS total_transactions FROM transactions;
 SELECT COUNT(*) AS total_feedback FROM user_feedback;
+SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================================
+-- END OF DATABASE SETUP
+-- ============================================================================
+
+-- ============================================================================
+-- STATUS WORKFLOW REFERENCE
+-- ============================================================================
+-- 1. Available (default) - Item is in stock and available for distribution
+-- 2. In-Use             - Item has been borrowed, awaiting return
+-- 3. Pending Repair     - Item was returned but found to be damaged
+-- 4. Serviceable        - Maintenance assessed item as repaired/good, ready for reuse
+-- 5. Unserviceable      - Maintenance assessed item as beyond repair, flagged for disposal
+-- ============================================================================

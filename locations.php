@@ -136,7 +136,7 @@ $locations = $conn->query("
 require_once 'includes/header.php';
 ?>
 <?php if ($is_admin): ?>
-<div style="margin-bottom: 20px; margin-right: 5px; text-align: right;">
+<div class="locations-actions">
     <button class="btn btn-success" onclick="showAddModal()">
         <i class="fas fa-plus"></i> Add Location
     </button>
@@ -179,7 +179,7 @@ require_once 'includes/header.php';
                         <tr>
                             <td><strong><?php echo htmlspecialchars($location['location_code'] ?? '-'); ?></strong></td>
                             <td>
-                                <i class="fas fa-warehouse" style="color: var(--primary-light);"></i>
+                                <i class="fas fa-warehouse location-icon-primary"></i>
                                 <?php echo htmlspecialchars($location['location_name']); ?>
                             </td>
                             <td><?php echo htmlspecialchars(substr($location['description'] ?? '-', 0, 50)) . (strlen($location['description'] ?? '') > 50 ? '...' : ''); ?></td>
@@ -257,8 +257,8 @@ require_once 'includes/header.php';
                 <div class="form-group">
                     <label class="form-label">Location Code *</label>
                     <input type="text" name="location_code" class="form-control" required 
-                        placeholder="e.g., WH-01, SR-A" style="text-transform: uppercase;">
-                    <small style="color: var(--gray-500); font-size: 12px;">Unique identifier for this location</small>
+                        placeholder="e.g., WH-01, SR-A" class="input-uppercase">
+                    <small class="password-hint">Unique identifier for this location</small>
                 </div>
                 
                 <div class="form-group">
@@ -271,7 +271,7 @@ require_once 'includes/header.php';
                     <label class="form-label">Capacity (optional)</label>
                     <input type="number" name="capacity" class="form-control" min="1" 
                         placeholder="Maximum storage capacity">
-                    <small style="color: var(--gray-500); font-size: 12px;">Leave blank if no specific capacity limit</small>
+                    <small class="password-hint">Leave blank if no specific capacity limit</small>
                 </div>
             </div>
             <div class="modal-footer">
@@ -323,9 +323,9 @@ require_once 'includes/header.php';
 <!-- Delete Confirmation Modal -->
 <?php if ($is_admin): ?>
 <div class="modal" id="deleteModal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header" style="background: #fee2e2; border-bottom: 2px solid #dc2626;">
-            <h3 class="modal-title" style="color: #991b1b;">
+    <div class="modal-content" class="modal-content-sm">
+        <div class="modal-header" class="modal-header-warn">
+            <h3 class="modal-title modal-title-warn">
                 <i class="fas fa-exclamation-triangle"></i> Delete Storage Location
             </h3>
             <button class="modal-close" onclick="hideDeleteModal()">&times;</button>
@@ -334,13 +334,13 @@ require_once 'includes/header.php';
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="location_id" id="delete_location_id">
             <div class="modal-body">
-                <div style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
-                    <p style="margin: 5px 0 0 0; color: #92400e;">This will deactivate the storage location. Items assigned to this location will remain in the database.</p>
+                <div class="alert-box-yellow">
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
+                    <p class="alert-text-orange">This will deactivate the storage location. Items assigned to this location will remain in the database.</p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
-                    Are you sure you want to delete storage location: <strong id="delete_location_name" style="color: #dc2626;"></strong>?
+                <p class="confirm-text">
+                    Are you sure you want to delete storage location: <strong class="confirm-name-warn"></strong>?
                 </p>
             </div>
             <div class="modal-footer">
@@ -372,15 +372,15 @@ require_once 'includes/header.php';
                 </div>
                 
                 <div id="permDeleteWarning" style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b; display: none;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
                     <p style="margin: 5px 0 0 0; color: #92400e;" id="permDeleteWarningText"></p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
+                <p class="confirm-text">
                     Permanently delete location: <strong id="perm_delete_location_name" style="color: #7f1d1d;"></strong>?
                 </p>
                 
-                <p style="font-size: 13px; color: #6b7280; margin-top: 15px;">
+                <p class="confirm-note">
                     This will remove all records from the database. Use only for cleanup purposes.
                 </p>
             </div>

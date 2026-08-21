@@ -148,7 +148,7 @@ $categories = $conn->query("
 require_once 'includes/header.php';
 ?>
 <?php if ($is_admin): ?>
-<div style="margin-bottom: 20px; margin-right: 5px; text-align: right;">
+<div class="page-actions-right">
     <button class="btn btn-success" onclick="showAddModal()">
         <i class="fas fa-plus"></i> Add Category
     </button>
@@ -169,38 +169,40 @@ require_once 'includes/header.php';
 
 <div class="dashboard-cards">
     <?php while ($cat = $categories->fetch_assoc()): ?>
-        <div class="card">
-            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
-                <div style="display: flex; align-items: center; gap: 15px;">
-                    <div style="width: 50px; height: 50px; border-radius: 8px; background: <?php echo htmlspecialchars($cat['color'] ?? '#3b82f6'); ?>20; display: flex; align-items: center; justify-content: center; color: <?php echo htmlspecialchars($cat['color'] ?? '#3b82f6'); ?>; font-size: 24px; font-weight: bold;">
+        <div class="card" style="display: flex; flex-direction: column;">
+            <div class="category-card-header">
+                <div class="category-card-title-row">
+                    <div style="width: 48px; height: 48px; border-radius: var(--radius); background: <?php echo htmlspecialchars($cat['color'] ?? '#3b82f6'); ?>18; display: flex; align-items: center; justify-content: center; color: <?php echo htmlspecialchars($cat['color'] ?? '#3b82f6'); ?>; font-size: 13px; font-weight: 800; flex-shrink: 0; letter-spacing: -.3px;">
                         <?php echo htmlspecialchars($cat['category_code']); ?>
                     </div>
-                    <div>
-                        <h3 style="margin: 0; color: var(--gray-800);"><?php echo htmlspecialchars($cat['category_name']); ?></h3>
-                        <p style="margin: 5px 0 0 0; color: var(--gray-500); font-size: 13px;">
+                    <div style="min-width: 0;">
+                        <h3 class="category-name"><?php echo htmlspecialchars($cat['category_name']); ?></h3>
+                        <p class="category-subtitle">
                             <?php echo htmlspecialchars($cat['description'] ?? 'No description'); ?>
                         </p>
                     </div>
                 </div>
-                <div style="text-align: right;">
+                <div class="category-header-right">
                     <span class="badge <?php echo $cat['is_active'] ? 'badge-success' : 'badge-danger'; ?>">
                         <?php echo $cat['is_active'] ? 'Active' : 'Inactive'; ?>
                     </span>
                 </div>
             </div>
             
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 15px 0; padding: 15px 0; border-top: 1px solid var(--gray-200); border-bottom: 1px solid var(--gray-200);">
+            <div style="flex: 1;"></div>
+            
+            <div class="category-stats-grid">
                 <div>
-                    <div style="font-size: 12px; color: var(--gray-500);">Total Items</div>
-                    <div style="font-size: 24px; font-weight: 700; color: var(--gray-800);"><?php echo number_format($cat['item_count']); ?></div>
+                    <div class="category-stat-label">Total Items</div>
+                    <div style="font-size: 22px; font-weight: 800; color: var(--gray-800);"><?php echo number_format($cat['item_count']); ?></div>
                 </div>
                 <div>
-                    <div style="font-size: 12px; color: var(--gray-500);">In Stock</div>
-                    <div style="font-size: 24px; font-weight: 700; color: var(--success);"><?php echo number_format($cat['items_in_stock']); ?></div>
+                    <div class="category-stat-label">In Stock</div>
+                    <div style="font-size: 22px; font-weight: 800; color: var(--success);"><?php echo number_format($cat['items_in_stock']); ?></div>
                 </div>
             </div>
             
-            <div style="display: flex; gap: 10px;">
+            <div class="category-action-row">
                 <button class="btn btn-sm btn-primary" onclick="viewCategory(<?php echo $cat['id']; ?>)" style="flex: 1;">
                     <i class="fas fa-eye"></i> View Items
                 </button>
@@ -209,14 +211,12 @@ require_once 'includes/header.php';
                 </button>
                 
                 <?php if ($is_admin): ?>
-                    <!-- Toggle Active/Inactive -->
                     <button class="btn btn-sm <?php echo $cat['is_active'] ? 'btn-secondary' : 'btn-success'; ?>" 
                             onclick="toggleStatus(<?php echo $cat['id']; ?>, <?php echo $cat['is_active'] ? 0 : 1; ?>)"
                             title="<?php echo $cat['is_active'] ? 'Deactivate' : 'Activate'; ?>">
                         <i class="fas fa-<?php echo $cat['is_active'] ? 'ban' : 'check'; ?>"></i>
                     </button>
                     
-                    <!-- Permanent Delete (only show for inactive items) -->
                     <?php if (!$cat['is_active']): ?>
                         <button class="btn btn-sm btn-danger" 
                                 onclick="confirmPermanentDelete(<?php echo $cat['id']; ?>, '<?php echo htmlspecialchars($cat['category_name'], ENT_QUOTES); ?>', <?php echo $cat['item_count']; ?>)" 
@@ -247,8 +247,8 @@ require_once 'includes/header.php';
                 
                 <div class="form-group">
                     <label class="form-label">Category Code *</label>
-                    <input type="text" name="category_code" class="form-control" required maxlength="10" style="text-transform: uppercase;">
-                    <small style="color: var(--gray-500); font-size: 12px;">Short code (e.g., MED, OFF, SRR)</small>
+                    <input type="text" name="category_code" class="form-control" required maxlength="10" class="input-uppercase">
+                    <small class="password-hint">Short code (e.g., MED, OFF, SRR)</small>
                 </div>
                 
                 <div class="form-group">
@@ -310,9 +310,9 @@ require_once 'includes/header.php';
 <!-- Delete Confirmation Modal -->
 <?php if ($is_admin): ?>
 <div class="modal" id="deleteModal">
-    <div class="modal-content" style="max-width: 500px;">
-        <div class="modal-header" style="background: #fee2e2; border-bottom: 2px solid #dc2626;">
-            <h3 class="modal-title" style="color: #991b1b;">
+    <div class="modal-content modal-content-sm">
+        <div class="modal-header modal-header-warn">
+            <h3 class="modal-title modal-title-warn">
                 <i class="fas fa-exclamation-triangle"></i> Delete Category
             </h3>
             <button class="modal-close" onclick="hideDeleteModal()">&times;</button>
@@ -321,18 +321,18 @@ require_once 'includes/header.php';
             <input type="hidden" name="action" value="delete">
             <input type="hidden" name="category_id" id="delete_category_id">
             <div class="modal-body">
-                <div id="deleteWarning" style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b; display: none;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
-                    <p style="margin: 5px 0 0 0; color: #92400e;" id="deleteWarningText"></p>
+                <div id="deleteWarning" class="alert-box-yellow" style="display:none;">
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
+                    <p class="alert-text-orange" id="deleteWarningText"></p>
                 </div>
                 
-                <div style="background: #dbeafe; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #3b82f6;">
-                    <strong style="color: #1e40af;">ℹ️ Note:</strong>
-                    <p style="margin: 5px 0 0 0; color: #1e40af;">This will deactivate the category. Existing items will remain in the database.</p>
+                <div class="alert-box-blue">
+                    <strong class="alert-label-blue">ℹ️ Note:</strong>
+                    <p class="alert-text-blue">This will deactivate the category. Existing items will remain in the database.</p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
-                    Are you sure you want to delete category: <strong id="delete_category_name" style="color: #dc2626;"></strong>?
+                <p class="confirm-text">
+                    Are you sure you want to delete category: <strong id="delete_category_name" class="confirm-name-warn"></strong>?
                 </p>
             </div>
             <div class="modal-footer">
@@ -347,38 +347,38 @@ require_once 'includes/header.php';
 
 <!-- Permanent Delete Modal -->
 <div class="modal" id="permanentDeleteModal">
-    <div class="modal-content" style="max-width: 550px;">
-        <div class="modal-header" style="background: #7f1d1d; border-bottom: 2px solid #450a0a;">
-            <h3 class="modal-title" style="color: #ffffff;">
+    <div class="modal-content modal-content-md">
+        <div class="modal-header modal-header-danger-dark">
+            <h3 class="modal-title modal-title-white">
                 <i class="fas fa-exclamation-triangle"></i> PERMANENT DELETE
             </h3>
-            <button class="modal-close" style="color: #ffffff;" onclick="hidePermanentDeleteModal()">&times;</button>
+            <button class="modal-close modal-close-white" onclick="hidePermanentDeleteModal()">&times;</button>
         </div>
         <form method="POST" action="">
             <input type="hidden" name="action" value="permanent_delete">
             <input type="hidden" name="category_id" id="perm_delete_category_id">
             <div class="modal-body">
-                <div style="background: #7f1d1d20; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #7f1d1d;">
-                    <strong style="color: #7f1d1d;">🚨 DANGER ZONE:</strong>
-                    <p style="margin: 5px 0 0 0; color: #7f1d1d; font-weight: 600;">This action CANNOT be undone! The category will be permanently removed from the database.</p>
+                <div class="alert-box-danger-dark">
+                    <strong class="alert-label-dark">🚨 DANGER ZONE:</strong>
+                    <p class="alert-text-dark">This action CANNOT be undone! The category will be permanently removed from the database.</p>
                 </div>
                 
-                <div id="permDeleteWarning" style="background: #fef3c7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #f59e0b; display: none;">
-                    <strong style="color: #92400e;">⚠️ Warning:</strong>
-                    <p style="margin: 5px 0 0 0; color: #92400e;" id="permDeleteWarningText"></p>
+                <div id="permDeleteWarning" class="alert-box-yellow" style="display:none;">
+                    <strong class="alert-label-orange">⚠️ Warning:</strong>
+                    <p class="alert-text-orange" id="permDeleteWarningText"></p>
                 </div>
                 
-                <p style="font-size: 15px; color: #374151;">
-                    Permanently delete category: <strong id="perm_delete_category_name" style="color: #7f1d1d;"></strong>?
+                <p class="confirm-text">
+                    Permanently delete category: <strong id="perm_delete_category_name" class="confirm-name-dark"></strong>?
                 </p>
                 
-                <p style="font-size: 13px; color: #6b7280; margin-top: 15px;">
+                <p class="confirm-note">
                     This will remove all records from the database. Use only for cleanup purposes.
                 </p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" onclick="hidePermanentDeleteModal()">Cancel</button>
-                <button type="submit" class="btn btn-danger" id="permDeleteButton" style="background: #7f1d1d;">
+                <button type="submit" class="btn btn-danger btn-dark-danger" id="permDeleteButton">
                     <i class="fas fa-skull-crossbones"></i> PERMANENT DELETE
                 </button>
             </div>

@@ -35,8 +35,8 @@ if (!isset($_SESSION['user_id'])) {
                 <a href="inventory.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'inventory.php' ? 'active' : ''; ?>">
                     <i class="fas fa-boxes"></i> All Items
                 </a>
-                <a href="low_stock.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'low_stock.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-exclamation-triangle"></i> Low Stock
+                <a href="stock_alert.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'stock_alert.php' ? 'active' : ''; ?>">
+                    <i class="fas fa-exclamation-triangle"></i> Stock Alert
                 </a>
                 
                 <div class="menu-divider">Transactions</div>
@@ -69,16 +69,16 @@ if (!isset($_SESSION['user_id'])) {
                     <i class="fas fa-chart-bar"></i> Reports
                 </a>
 
-                <div class="menu-divider">Support</div>
+                <!-- <div class="menu-divider">Support</div> -->
                 <!-- <a href="feedback.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'feedback.php' ? 'active' : ''; ?>">
                     <i class="fas fa-comment-dots"></i> Send Feedback
                 </a>
                  -->
-                <?php if ($_SESSION['user_role'] === 'admin'): ?>
+                <!-- <?php if ($_SESSION['user_role'] === 'admin'): ?>
                     <a href="admin_feedback.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'admin_feedback.php' ? 'active' : ''; ?>">
                         <i class="fas fa-inbox"></i> Manage Feedback
                     </a>
-                <?php endif; ?>
+                <?php endif; ?> -->
                 
                 <?php if ($_SESSION['user_role'] === 'admin'): ?>
                 <div class="menu-divider">Administration</div>
@@ -97,14 +97,7 @@ if (!isset($_SESSION['user_id'])) {
                 </a>
                 <?php endif; ?>
                 
-                
-                <div class="menu-divider">Account</div>
-                <a href="change_password.php" class="menu-item <?php echo basename($_SERVER['PHP_SELF']) == 'change_password.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-key"></i> Change Password
-                </a>
-                <a href="logout.php" class="menu-item">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
+            
             </nav>
         </aside>
         
@@ -116,16 +109,43 @@ if (!isset($_SESSION['user_id'])) {
                     <h1><?php echo isset($page_title) ? $page_title : 'Dashboard'; ?></h1>
                 </div>
                 <div class="topnav-right">
-                    <div class="user-info">
-                        <div class="user-avatar">
-                            <?php echo strtoupper(substr($_SESSION['full_name'], 0, 1)); ?>
-                        </div>
-                        <div class="user-details">
-                            <div class="user-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></div>
-                            <div class="user-role"><?php echo ucfirst($_SESSION['user_role']); ?></div>
+                    <div class="user-info-dropdown" id="userInfoDropdown">
+                        <button type="button" class="user-info" id="userInfoToggle" onclick="toggleUserMenu(event)">
+                            <div class="user-avatar">
+                                <?php echo strtoupper(substr($_SESSION['full_name'], 0, 1)); ?>
+                            </div>
+                            <div class="user-details">
+                                <div class="user-name"><?php echo htmlspecialchars($_SESSION['full_name']); ?></div>
+                                <div class="user-role"><?php echo ucfirst($_SESSION['user_role']); ?></div>
+                            </div>
+                            <i class="fas fa-chevron-down user-info-caret"></i>
+                        </button>
+                        <div class="user-info-menu" id="userInfoMenu">
+                            <a href="<?php echo htmlspecialchars(OTHER_SYSTEM_URL); ?>" target="_blank" rel="noopener noreferrer" class="user-info-menu-item">
+                                <i class="fas fa-external-link-alt"></i> Open Other System
+                            </a>
+                            <div class="user-info-menu-divider"></div>
+                            <a href="change_password.php" class="user-info-menu-item">
+                                <i class="fas fa-key"></i> Change Password
+                            </a>
+                            <a href="logout.php" class="user-info-menu-item">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a>
                         </div>
                     </div>
                 </div>
+                <script>
+                function toggleUserMenu(e) {
+                    e.stopPropagation();
+                    document.getElementById('userInfoDropdown').classList.toggle('open');
+                }
+                document.addEventListener('click', function(e) {
+                    const dropdown = document.getElementById('userInfoDropdown');
+                    if (dropdown && !dropdown.contains(e.target)) {
+                        dropdown.classList.remove('open');
+                    }
+                });
+                </script>
             </nav>
             
             

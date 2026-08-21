@@ -41,21 +41,13 @@ while ($row = $suppliers->fetch_assoc()) {
 require_once 'includes/header.php';
 ?>
 
-<style>
-@media print {
-    .no-print { display: none !important; }
-    body { background: white; }
-    .card { box-shadow: none; }
-}
-</style>
-
-<div class="no-print" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+<div class="no-print report-page-actions">
     <div>
         <a href="reports.php" class="btn btn-secondary">
             <i class="fas fa-arrow-left"></i> Back to Reports
         </a>
     </div>
-    <div style="display: flex; gap: 10px;">
+    <div class="report-page-btns">
     <button onclick="printProfessionalReport('supplierTable', 'SUPPLIER TRANSACTION REPORT', '')" class="btn btn-primary">
         <i class="fas fa-print"></i> Print Report
     </button>
@@ -66,40 +58,40 @@ require_once 'includes/header.php';
 </div>
 
 <!-- Report Header -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 40px; text-align: center; border-bottom: 3px solid var(--primary);">
-        <h1 style="margin: 0; color: var(--primary); font-size: 28px;">PASSI CITY</h1>
-        <h2 style="margin: 5px 0 0 0; color: var(--gray-700); font-size: 18px;">DISASTER RISK REDUCTION & MANAGEMENT OFFICE</h2>
-        <h3 style="margin: 15px 0 5px 0; color: var(--gray-700); font-size: 20px; font-weight: 600;">SUPPLIER TRANSACTION REPORT</h3>
+<div class="card report-header-card">
+    <div class="report-header-body-alt">
+        <h1 class="report-org-name">PASSI CITY</h1>
+        <h2 class="report-supplier-h2">DISASTER RISK REDUCTION & MANAGEMENT OFFICE</h2>
+        <h3 class="report-supplier-h3">SUPPLIER TRANSACTION REPORT</h3>
         <p style="margin: 0; color: var(--gray-600);">Generated: <?php echo date('F d, Y h:i A'); ?></p>
     </div>
 </div>
 
 <!-- Summary Statistics -->
-<div class="card" style="margin-bottom: 20px;">
-    <div style="padding: 20px;">
-        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px;">
-            <div style="text-align: center; padding: 15px; background: var(--primary-50); border-radius: 6px;">
-                <div style="font-size: 12px; color: var(--primary); margin-bottom: 5px;">Total Suppliers</div>
-                <div style="font-size: 24px; font-weight: 700; color: var(--primary);">
+<div class="card report-header-card">
+    <div class="report-filter-body">
+        <div class="report-summary-grid-4">
+            <div class="report-stat-blue">
+                <div class="report-stat-label-blue">Total Suppliers</div>
+                <div class="report-stat-value-blue">
                     <?php echo number_format($grand_totals['suppliers']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #d1fae5; border-radius: 6px;">
-                <div style="font-size: 12px; color: #065f46; margin-bottom: 5px;">Total Transactions</div>
-                <div style="font-size: 24px; font-weight: 700; color: #065f46;">
+            <div class="report-stat-green">
+                <div class="report-stat-label-green">Total Transactions</div>
+                <div class="report-stat-value-green">
                     <?php echo number_format($grand_totals['transactions']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #fef3c7; border-radius: 6px;">
-                <div style="font-size: 12px; color: #92400e; margin-bottom: 5px;">Total Items Received</div>
-                <div style="font-size: 24px; font-weight: 700; color: #92400e;">
+            <div class="report-stat-yellow">
+                <div class="report-stat-label-yellow">Total Items Received</div>
+                <div class="report-stat-value-yellow">
                     <?php echo number_format($grand_totals['quantity']); ?>
                 </div>
             </div>
-            <div style="text-align: center; padding: 15px; background: #fee2e2; border-radius: 6px;">
-                <div style="font-size: 12px; color: #991b1b; margin-bottom: 5px;">Total Value</div>
-                <div style="font-size: 24px; font-weight: 700; color: #991b1b;">
+            <div class="report-stat-red">
+                <div class="report-stat-label-red">Total Value</div>
+                <div class="report-stat-value-red">
                     ₱<?php echo number_format($grand_totals['value'], 2); ?>
                 </div>
             </div>
@@ -109,41 +101,41 @@ require_once 'includes/header.php';
 
 <!-- Supplier Table -->
 <div class="card">
-    <div style="padding: 20px;">
-        <table style="width: 100%; border-collapse: collapse;" id="supplierTable">
+    <div class="report-filter-body">
+        <table class="report-data-table-auto" id="supplierTable">
             <thead>
-                <tr style="background: var(--primary); color: white;">
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd; color: white;">Supplier Name</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;color: white;">Contact Person</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;color: white;">Phone</th>
-                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;color: white;">Transactions</th>
-                    <th style="padding: 12px; text-align: center; border: 1px solid #ddd;color: white;">Items Received</th>
-                    <th style="padding: 12px; text-align: right; border: 1px solid #ddd;color: white;">Total Value</th>
-                    <th style="padding: 12px; text-align: left; border: 1px solid #ddd;color: white;">Last Transaction</th>
+                <tr class="report-thead-row">
+                    <th class="report-th report-th-left">Supplier Name</th>
+                    <th class="report-th report-th-left">Contact Person</th>
+                    <th class="report-th report-th-left">Phone</th>
+                    <th class="report-th report-th-center">Transactions</th>
+                    <th class="report-th report-th-center">Items Received</th>
+                    <th class="report-th report-th-right">Total Value</th>
+                    <th class="report-th report-th-left">Last Transaction</th>
                 </tr>
             </thead>
             <tbody>
                 <?php foreach ($supplier_data as $supplier): ?>
                     <tr>
-                        <td style="padding: 10px; border: 1px solid #ddd;">
+                        <td class="report-td">
                             <strong><?php echo htmlspecialchars($supplier['supplier_name']); ?></strong>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">
+                        <td class="report-td">
                             <?php echo htmlspecialchars($supplier['contact_person'] ?? '-'); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">
+                        <td class="report-td">
                             <?php echo htmlspecialchars($supplier['phone'] ?? '-'); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 600;">
+                        <td class="report-td report-td-center report-td-bold">
                             <?php echo number_format($supplier['transaction_count']); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center; font-weight: 600;">
+                        <td class="report-td report-td-center report-td-bold">
                             <?php echo number_format($supplier['total_quantity']); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd; text-align: right; font-weight: 700; color: var(--primary);">
+                        <td class="report-td report-td-right report-td-bold report-value-primary">
                             ₱<?php echo number_format($supplier['total_value'], 2); ?>
                         </td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">
+                        <td class="report-td">
                             <?php 
                             if ($supplier['last_transaction_date']) {
                                 echo date('M d, Y', strtotime($supplier['last_transaction_date']));
@@ -157,25 +149,25 @@ require_once 'includes/header.php';
                 
                 <?php if (empty($supplier_data)): ?>
                     <tr>
-                        <td colspan="7" style="padding: 30px; text-align: center; color: var(--gray-500); border: 1px solid #ddd;">
+                        <td colspan="7" class="report-empty-cell">
                             No suppliers found
                         </td>
                     </tr>
                 <?php endif; ?>
                 
                 <!-- Totals Row -->
-                <tr style="background: var(--gray-100); font-weight: 700;">
-                    <td colspan="3" style="padding: 12px; border: 1px solid #ddd; text-align: right;">TOTALS:</td>
-                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                <tr class="report-totals-row">
+                    <td class="report-totals-value-right">TOTALS:</td>
+                    <td class="report-totals-value">
                         <?php echo number_format($grand_totals['transactions']); ?>
                     </td>
-                    <td style="padding: 12px; border: 1px solid #ddd; text-align: center;">
+                    <td class="report-totals-value">
                         <?php echo number_format($grand_totals['quantity']); ?>
                     </td>
-                    <td style="padding: 12px; border: 1px solid #ddd; text-align: right; color: var(--primary);">
+                    <td class="report-totals-value-right report-value-primary">
                         ₱<?php echo number_format($grand_totals['value'], 2); ?>
                     </td>
-                    <td style="padding: 12px; border: 1px solid #ddd;"></td>
+                    <td class="report-totals-empty"></td>
                 </tr>
             </tbody>
         </table>
