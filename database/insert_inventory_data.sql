@@ -1,4 +1,4 @@
-USE if0_41707050_inventory;
+USE cdrrmo_inventory;
 
 -- OFFICE SUPPLIES (Continuing from OFC-010)
 INSERT INTO inventory_items (item_code, category_id, item_description, unit, items_received, items_distributed, items_on_hand, minimum_stock_level, storage_location_id, created_by) VALUES
