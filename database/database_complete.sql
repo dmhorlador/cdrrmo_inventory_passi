@@ -377,6 +377,7 @@ CREATE TABLE IF NOT EXISTS item_batches (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (item_id) REFERENCES inventory_items(id) ON DELETE CASCADE,
+    FOREIGN KEY (transaction_id) REFERENCES transactions(id) ON DELETE SET NULL,
     INDEX idx_item_batches_item_id (item_id),
     INDEX idx_item_batches_expiration (expiration_date),
     INDEX idx_item_batches_qty (quantity_on_hand)

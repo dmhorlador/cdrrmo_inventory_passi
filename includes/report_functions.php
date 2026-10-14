@@ -22,60 +22,69 @@ if (file_exists($logo_right_path)) {
 const PRINT_LOGO_LEFT  = <?php echo json_encode($logo_left_b64); ?>;
 const PRINT_LOGO_RIGHT = <?php echo json_encode($logo_right_b64); ?>;
 
-// Export table to Excel
+// ── Helper: collect visible cell text from a row, skipping col-hidden cells ──
+function getVisibleCells(row) {
+    return Array.from(row.querySelectorAll('th, td')).filter(cell => {
+        // Skip if the cell itself is hidden
+        if (cell.classList.contains('col-hidden')) return false;
+        // Skip action/button columns
+        if (cell.querySelector('.btn')) return false;
+        const text = cell.textContent.trim();
+        if (text === 'Restock' || text === 'Edit') return false;
+        return true;
+    });
+}
+
+// ── Export table to Excel (respects col-hidden columns) ──────────
 function exportReportToExcel(tableId, reportTitle, filename) {
     if (typeof XLSX === 'undefined') {
         alert('Loading export library, please try again...');
         return;
     }
-    
+
     const table = document.getElementById(tableId);
-    const wb = XLSX.utils.book_new();
-    const data = [];
-    
-    // Add headers
+    const wb    = XLSX.utils.book_new();
+    const data  = [];
+
+    // Report title rows
     data.push(['PASSI CITY - DRRMO']);
     data.push([reportTitle]);
     data.push(['Generated: ' + new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })]);
     data.push([]);
-    
-    // Get table headers
+
+    // Headers (visible only)
     const headerRow = table.querySelector('thead tr');
     if (headerRow) {
-        const headers = [];
-        headerRow.querySelectorAll('th').forEach(th => headers.push(th.textContent.trim()));
+        const headers = getVisibleCells(headerRow).map(th => th.textContent.trim());
         data.push(headers);
     }
-    
-    // Get table data
+
+    // Body rows (visible cells only)
     const tbody = table.querySelector('tbody');
     if (tbody) {
         tbody.querySelectorAll('tr').forEach(row => {
-            const rowData = [];
-            row.querySelectorAll('td').forEach(cell => {
+            const rowData = getVisibleCells(row).map(cell => {
                 let text = cell.textContent.trim().replace(/\s+/g, ' ');
                 if (text.startsWith('₱')) {
-                    rowData.push(parseFloat(text.replace('₱', '').replace(/,/g, '')) || 0);
-                } else {
-                    rowData.push(text);
+                    return parseFloat(text.replace('₱', '').replace(/,/g, '')) || 0;
                 }
+                return text;
             });
             if (rowData.some(cell => cell !== '')) data.push(rowData);
         });
     }
-    
+
     const ws = XLSX.utils.aoa_to_sheet(data);
-    ws['!cols'] = Array(20).fill({wch: 15});
+    ws['!cols'] = Array(20).fill({ wch: 15 });
     XLSX.utils.book_append_sheet(wb, ws, 'Report');
     XLSX.writeFile(wb, filename);
 }
 
-// ── Professional print WITH logos ──────────────────────────────
+// ── Professional print WITH logos (respects col-hidden columns) ──
 function printProfessionalReport(tableId, reportTitle, subtitle) {
     const table = document.getElementById(tableId);
     const printWindow = window.open('', '', 'width=1000,height=750');
 
-    // Build logo HTML — only show if the base64 data exists
     let logoLeftHtml  = PRINT_LOGO_LEFT  ? `<img src="${PRINT_LOGO_LEFT}"  style="width:65px;height:65px;border-radius:50%;object-fit:cover;border:1.5px solid #999;">` : '';
     let logoRightHtml = PRINT_LOGO_RIGHT ? `<img src="${PRINT_LOGO_RIGHT}" style="width:65px;height:65px;border-radius:50%;object-fit:contain;border:1.5px solid #999;">` : '';
 
@@ -85,54 +94,23 @@ function printProfessionalReport(tableId, reportTitle, subtitle) {
         @page { size: A4 landscape; margin: 0.4in 0.25in; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: Arial, Helvetica, sans-serif; color: #000; font-size: 9pt; }
-
-        /* ── Header with logos ── */
-        .header {
-            text-align: center;
-            margin-bottom: 14px;
-            padding-bottom: 12px;
-            border-bottom: 3px double #000;
-        }
-        .header-row {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 6px;
-        }
+        .header { text-align: center; margin-bottom: 14px; padding-bottom: 12px; border-bottom: 3px double #000; }
+        .header-row { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 6px; }
         .header-center { text-align: center; }
         .header-center .line1 { font-size: 12pt; font-weight: bold; margin-bottom: 1px; }
         .header-center .line2 { font-size: 10pt; margin-bottom: 1px; }
         .header-center .line3 { font-size: 13pt; font-weight: bold; margin-bottom: 1px; }
         .header-center .line4 { font-size: 9.5pt; margin-bottom: 0; }
-
-        .doc-title {
-            font-size: 12pt;
-            font-weight: bold;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin: 8px 0 3px;
-        }
-        .doc-meta { font-size: 8.5pt; color: #333; }
-
-        /* ── Table ── */
+        .doc-title { font-size: 12pt; font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; margin: 8px 0 3px; }
+        .doc-meta  { font-size: 8.5pt; color: #333; }
         table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 8.5pt; }
         th, td { border: 1px solid #000; padding: 5px 6px; }
         th { background: #f0f0f0; font-weight: bold; text-align: center; font-size: 8pt; text-transform: uppercase; }
         tr:nth-child(even) td { background: #fafafa; }
-
-        /* ── Signatures ── */
-        .signatures {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 40px;
-            page-break-inside: avoid;
-        }
+        .signatures { display: flex; justify-content: space-between; margin-top: 40px; page-break-inside: avoid; }
         .sig-box { width: 30%; text-align: center; }
         .sig-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 4px; font-weight: bold; font-size: 9pt; }
         .sig-role { font-size: 8pt; color: #444; margin-top: 2px; }
-
-        /* ── Footer ── */
         .print-footer { margin-top: 20px; text-align: center; font-size: 7.5pt; color: #888; border-top: 1px solid #ccc; padding-top: 6px; }
     </style>
     </head><body>
@@ -154,48 +132,42 @@ function printProfessionalReport(tableId, reportTitle, subtitle) {
     </div>
 
     <table>`);
-    
-    // ── Table headers ──
+
+    // ── Visible headers only ──
     const headerRow = table.querySelector('thead tr');
     if (headerRow) {
         printWindow.document.write('<thead><tr>');
-        headerRow.querySelectorAll('th').forEach(th => {
-            const text = th.textContent.trim();
-            if (!text.match(/action/i)) {
-                printWindow.document.write(`<th>${text}</th>`);
-            }
+        getVisibleCells(headerRow).forEach(th => {
+            printWindow.document.write(`<th>${th.textContent.trim()}</th>`);
         });
         printWindow.document.write('</tr></thead>');
     }
-    
-    // ── Table body ──
+
+    // ── Visible body cells only ──
     printWindow.document.write('<tbody>');
     const tbody = table.querySelector('tbody');
     if (tbody) {
         tbody.querySelectorAll('tr').forEach(row => {
-            const cells = Array.from(row.querySelectorAll('td'));
-            
-            printWindow.document.write('<tr>');
-            cells.forEach((cell, i) => {
-                const text = cell.textContent.trim();
-                // Skip action columns (buttons)
-                if (cell.querySelector('.btn') || text === 'Restock' || text === 'Edit') return;
+            const cells = getVisibleCells(row);
+            if (cells.length === 0) return;
 
-                // Auto-align: currency right, numbers center, text left
+            printWindow.document.write('<tr>');
+            cells.forEach(cell => {
+                const text = cell.textContent.trim();
+                // Auto-align
                 let align = 'left';
                 if (text.match(/^₱[\d,\.]+$/)) align = 'right';
-                else if (text.match(/^\d[\d,]*$/)) align = 'center';
+                else if (text.match(/^\d[\d,]*%?$/)) align = 'center';
 
-                // Bold totals row
-                const isBold = row.style.fontWeight === '700' || row.style.fontWeight === 'bold' || row.style.background;
-                const boldStyle = isBold ? 'font-weight:bold;' : '';
+                const isBold = row.classList.contains('report-totals-row');
+                const boldStyle = isBold ? 'font-weight:bold;background:#f0f0f0;' : '';
 
                 printWindow.document.write(`<td style="text-align:${align};${boldStyle}">${text}</td>`);
             });
             printWindow.document.write('</tr>');
         });
     }
-    
+
     printWindow.document.write(`
     </tbody></table>
 
@@ -219,10 +191,9 @@ function printProfessionalReport(tableId, reportTitle, subtitle) {
     </div>
 
     </body></html>`);
-    
+
     printWindow.document.close();
     printWindow.focus();
-    // Small delay to let images render before print dialog
     setTimeout(() => printWindow.print(), 400);
 }
 </script>

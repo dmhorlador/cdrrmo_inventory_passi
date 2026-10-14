@@ -4635,3 +4635,190 @@ input[placeholder="e.g., WH-01, SR-A"] {
 .expiry-section-label i {
     color: var(--primary-light);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   CUSTOMIZABLE REPORT COLUMNS — Column Selector UI
+   ══════════════════════════════════════════════════════════════ */
+
+/* Container card for the column picker */
+.col-selector-card {
+    margin-bottom: 20px;
+}
+
+.col-selector-body {
+    padding: 20px;
+}
+
+.col-selector-title {
+    margin: 0 0 4px 0;
+    color: var(--gray-800);
+    font-size: 15px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.col-selector-title i {
+    color: var(--primary-light);
+    font-size: 14px;
+}
+
+.col-selector-subtitle {
+    color: var(--gray-500);
+    font-size: 12.5px;
+    margin: 0 0 16px 0;
+}
+
+/* Grid of checkbox cards */
+.col-selector-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(175px, 1fr));
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+/* Each individual checkbox card */
+.col-checkbox-card {
+    position: relative;
+    cursor: pointer;
+    user-select: none;
+}
+
+.col-checkbox-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.col-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 14px;
+    border: 2px solid var(--gray-200);
+    border-radius: var(--radius);
+    background: var(--white);
+    cursor: pointer;
+    transition: border-color .15s var(--ease), background .15s var(--ease), box-shadow .15s var(--ease);
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--gray-700);
+    min-height: 44px;
+}
+
+/* Custom checkbox box */
+.col-checkbox-label::before {
+    content: '';
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: 4px;
+    background: var(--white);
+    transition: all .15s var(--ease);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Checked state */
+.col-checkbox-card input[type="checkbox"]:checked + .col-checkbox-label {
+    border-color: var(--primary);
+    background: var(--primary-50);
+    color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(26, 51, 112, .08);
+}
+
+.col-checkbox-card input[type="checkbox"]:checked + .col-checkbox-label::before {
+    background: var(--primary);
+    border-color: var(--primary);
+    content: '✓';
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+/* Hover state */
+.col-checkbox-card:hover .col-checkbox-label {
+    border-color: var(--primary-light);
+    background: var(--primary-50);
+}
+
+/* Select all / deselect all quick links */
+.col-selector-actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.col-selector-actions .col-quick-link {
+    font-size: 12.5px;
+    color: var(--primary-light);
+    cursor: pointer;
+    font-weight: 600;
+    background: none;
+    border: none;
+    padding: 0;
+    text-decoration: underline;
+    text-decoration-color: transparent;
+    transition: text-decoration-color .15s;
+}
+
+.col-selector-actions .col-quick-link:hover {
+    text-decoration-color: var(--primary-light);
+}
+
+.col-selector-sep {
+    color: var(--gray-300);
+    font-size: 12px;
+}
+
+/* Validation warning */
+.col-selector-warning {
+    display: none;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    background: var(--warning-light);
+    border: 1px solid #fde68a;
+    border-radius: var(--radius);
+    color: #92400e;
+    font-size: 13px;
+    font-weight: 500;
+    margin-top: 12px;
+}
+
+.col-selector-warning.show {
+    display: flex;
+}
+
+/* Hidden columns in the report table */
+.col-hidden {
+    display: none !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .col-selector-grid {
+        grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        gap: 8px;
+    }
+
+    .col-checkbox-label {
+        font-size: 12px;
+        padding: 8px 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .col-selector-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+}
